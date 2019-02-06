@@ -1,0 +1,1 @@
+npm start -- --peer.address grpc://localhost:7052 --chaincode-id-name demo:0.0.1

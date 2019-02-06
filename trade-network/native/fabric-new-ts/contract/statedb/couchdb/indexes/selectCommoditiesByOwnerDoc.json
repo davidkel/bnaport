@@ -1,0 +1,11 @@
+{
+    "index": {
+        "fields": [
+            "\\$class",
+            "owner"
+        ]
+    },
+    "name": "selectCommoditiesByOwner",
+    "ddoc": "selectCommoditiesByOwnerDoc",
+    "type": "json"
+}
