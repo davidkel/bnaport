@@ -10,7 +10,7 @@ class ChaincodeEventEmitter extends EventEmitter {
     async initialize() {
         const channel = this.network.getChannel();
         const peers = channel.getPeersForOrg('Org1MSP');
-        this.eventHub = channel.newChannelEventHub(peers[0]);
+        this.eventHub = channel.newChannelEventHub(peers[0].getPeer());
 
         const waitToConnect = new Promise((resolve, reject) => {
             this.eventHub.connect(true, (err, eventHub) => {

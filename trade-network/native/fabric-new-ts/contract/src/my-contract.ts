@@ -14,6 +14,8 @@ import {
     Trader,
     TraderClass,
     TraderIdField,
+    TraderType,
+    CommodityType,
 } from '../../model/trade-model';
 
 // TODO: Should the transaction request be modelled or just a set of parameters (currently modelled)
@@ -57,10 +59,16 @@ export class MyContract extends Contract {
         return this.CRUDTrader(ctx, traderStr, 'u');
     }
     public async deleteTrader(ctx: Context, tradeId: string): Promise<any> {
-        return this.CRUDTrader(ctx, `{${TraderIdField}: ${tradeId}}`, 'd');
+        return this.CRUDTrader(ctx, `{"${TraderIdField}": "${tradeId}"}`, 'd');
     }
     public async getTrader(ctx: Context, tradeId: string): Promise<any> {
-        return this.CRUDTrader(ctx, `{${TraderIdField}: ${tradeId}}`, 'r');
+        return this.CRUDTrader(ctx, `{"${TraderIdField}": "${tradeId}"}`, 'r');
+    }
+    public async getTraderHistory(ctx: Context, tradeId: string): Promise<any> {
+        return this._historyForResource(ctx, TraderType, TraderClass, tradeId);
+    }
+    public async existsTrader(ctx: Context, tradeId: string): Promise<any> {
+        return this.CRUDTrader(ctx, `{"${TraderIdField}": "${tradeId}"}`, 'e');
     }
 
     public async addCommodity(ctx: Context, commodityStr: string): Promise<any> {
@@ -70,22 +78,28 @@ export class MyContract extends Contract {
         return this.CRUDCommodity(ctx, commodityStr, 'u');
     }
     public async deleteCommodity(ctx: Context, tradingSymbol: string): Promise<any> {
-        return this.CRUDCommodity(ctx, `{${CommodityIdField}: ${tradingSymbol}}`, 'd');
+        return this.CRUDCommodity(ctx, `{"${CommodityIdField}": "${tradingSymbol}"}`, 'd');
     }
     public async getCommodity(ctx: Context, tradingSymbol: string): Promise<any> {
-        return this.CRUDCommodity(ctx, `{${CommodityIdField}: ${tradingSymbol}}`, 'r');
+        return this.CRUDCommodity(ctx, `{"${CommodityIdField}": "${tradingSymbol}"}`, 'r');
+    }
+    public async getCommodityHistory(ctx: Context, tradingSymbol: string): Promise<any> {
+        return this._historyForResource(ctx, CommodityType, CommodityClass, tradingSymbol);
+    }
+    public async existsCommodity(ctx: Context, tradingSymbol: string): Promise<any> {
+        return this.CRUDCommodity(ctx, `{"${CommodityIdField}": "${tradingSymbol}"}`, 'e');
     }
 
     public async CRUDTrader(ctx: Context, traderStr: string, action: string): Promise<any> {
         const trader: Trader = JSON.parse(traderStr);
         trader.$class = TraderClass;
-        return this._CRUDResource(ctx, 'Participant', trader, TraderIdField, action);
+        return this._CRUDResource(ctx, TraderType, trader, TraderIdField, action);
     }
 
     public async CRUDCommodity(ctx: Context, commodityStr: string, action: string): Promise<any> {
         const commodity: Commodity = JSON.parse(commodityStr);
         commodity.$class = CommodityClass;
-        return this._CRUDResource(ctx, 'Asset', commodity, CommodityIdField, action);
+        return this._CRUDResource(ctx, CommodityType, commodity, CommodityIdField, action);
     }
 
     public async runDynamicQuery(ctx: Context, mango: string) {
@@ -142,13 +156,12 @@ export class MyContract extends Contract {
         const trade: Trade = JSON.parse(tradeStr);
 
         // note here you have to dereference a resource uri
-        const commodityToUpdate: Commodity = await this.resolveResource(ctx, `${CommodityClass}#${trade.commodityId}`, 'Asset');
+        const commodityToUpdate: Commodity = await this.resolveResource(ctx, `${CommodityClass}#${trade.commodityId}`, CommodityType);
         // here to continue consistency create a resource uri
         commodityToUpdate.owner = `resource:${TraderClass}#${trade.newOwnerId}`;
 
         // update the commodity.
-        const compositeKey = ctx.stub.createCompositeKey(`Asset:${CommodityClass}`, [commodityToUpdate.tradingSymbol]);
-        await ctx.stub.putState(compositeKey, Buffer.from(JSON.stringify(commodityToUpdate)));
+        this._CRUDResource(ctx, CommodityType, commodityToUpdate, CommodityIdField, 'u');
 
         // fire the chaincode event
         const event = [{action: 'trade', commodity: commodityToUpdate}];
@@ -205,36 +218,81 @@ export class MyContract extends Contract {
     // provide equivalent composer capabilities not directly
     // exposed
     // ------------------------------------------------------
+    private async _historyForResource(ctx: Context, type: string, $class: string, id: string) {
+        const compositeKey = ctx.stub.createCompositeKey(type + ':' + $class, [id]);
+        const historyIterator: Iterators.HistoryQueryIterator = await ctx.stub.getHistoryForKey(compositeKey);
+        return await this._getAllHistoryResults(ctx, historyIterator);
+    }
+
     private async _CRUDResource(ctx: Context, type: string, resource: Resource, idField: string, action: string): Promise<any> {
         const compositeKey = ctx.stub.createCompositeKey(type + ':' + resource.$class, [resource[idField]]);
+        const state: Buffer = await ctx.stub.getState(compositeKey);
         switch (action) {
             case 'c':
-            case 'u':
+                if (state.length !== 0) {
+                    throw new Error(`Resource ${resource.$class} with id ${resource[idField]} exists`);
+                }
                 await ctx.stub.putState(compositeKey, Buffer.from(JSON.stringify(resource)));
                 return resource;
+            case 'u':
+            if (state.length === 0) {
+                throw new Error(`Resource ${resource.$class} with id ${resource[idField]} doesn't exist`);
+            }
+            await ctx.stub.putState(compositeKey, Buffer.from(JSON.stringify(resource)));
+                return resource;
             case 'd':
-                // TODO: Should check it exists first
+                if (state.length === 0) {
+                    throw new Error(`Resource ${resource.$class} with id ${resource[idField]} doesn't exist`);
+                }
                 await ctx.stub.deleteState(compositeKey);
                 return;
             case 'r':
-                const state: Buffer = await ctx.stub.getState(compositeKey);
                 if (state.length) {
                     return JSON.parse(state.toString('utf8'));
                 }
                 throw new Error(`${type}:${resource.$class} with id ${resource[idField]} does not exist`);
             case 'e':
-                const state2: Buffer = await ctx.stub.getState(compositeKey);
-                return state2.length !== 0;
+                return state.length !== 0;
+        }
+    }
+
+    private async _getAllHistoryResults(ctx: Context, iterator: Iterators.HistoryQueryIterator) {
+        const results = [];
+        let res: Iterators.NextKeyModificationResult = {done: false, value: null};
+        while (!res.done) {
+            res = await iterator.next();
+            const itVal: Iterators.KeyModification = res.value;
+            if (itVal) {
+                let resp: any = {
+                    timestamp: itVal.timestamp,
+                    txid: itVal.tx_id
+                }
+                if (itVal.is_delete) {
+                   resp.data = 'DELETED';
+                } else {
+                   resp.data = JSON.parse(itVal.value.toString('utf8'));
+                }
+                results.push(resp);
+            }
+            if (res && res.done) {
+                try {
+                    await iterator.close();
+                } catch (err) {
+                    console.log(err);
+                }
+                return results;
+            }
         }
     }
 
     private async _getAllResults(ctx: Context, iterator: Iterators.StateQueryIterator): Promise<any> {
         const results = [];
-        let res = {done: false, value: null};
+        let res: Iterators.NextResult = {done: false, value: null};
         while (!res.done) {
             res = await iterator.next();
-            if (res && res.value && res.value.value) {
-                const val = res.value.value.toString('utf8');
+            const itVal: Iterators.KV = res.value;
+            if (itVal && itVal.value) {
+                const val = itVal.value.toString('utf8');
                 if (val.length > 0) {
                     results.push(JSON.parse(val));
                 }

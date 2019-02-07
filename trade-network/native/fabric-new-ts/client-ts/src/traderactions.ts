@@ -23,16 +23,16 @@ export class TraderActions {
             lastName: last
         }
 
-        let exists: Buffer = await this.contract.evaluateTransaction('CRUDTrader', JSON.stringify(trader), 'e');
+        let exists: Buffer = await this.contract.evaluateTransaction('existsTrader', traderID);
 
         if (!exists.length) {
-            await this.contract.submitTransaction('CRUDTrader', JSON.stringify(trader), 'c');
+            await this.contract.submitTransaction('addTrader', JSON.stringify(trader));
             console.log('trader added');
         } else {
             console.log('trader exists');
         }
         console.log('trader details retrieved');
-        const res: Buffer = await this.contract.evaluateTransaction('CRUDTrader', JSON.stringify(trader), 'r');
+        const res: Buffer = await this.contract.evaluateTransaction('getTrader', traderID);
         this.displayResource(res.toString('utf8'));
     }
 
@@ -45,25 +45,25 @@ export class TraderActions {
         await this.createTrader('T5', 'John', 'Doe');
 
     
-        // Do Full CRUD on trader 3
+        // Do Full CRUD on TEMP trader
         const tempTrader: Trader = {
             tradeId: 'TEMP',
             firstName: 'Joe',
             lastName: 'Bloggs'
         }
-        await this.contract.submitTransaction('CRUDTrader', JSON.stringify(tempTrader), 'c');
+        await this.contract.submitTransaction('addTrader', JSON.stringify(tempTrader));
         console.log('Temp trader details');
-        let res: Buffer = await this.contract.evaluateTransaction('CRUDTrader', JSON.stringify(tempTrader), 'r');
+        let res: Buffer = await this.contract.evaluateTransaction('getTrader', 'TEMP');
         this.displayResource(res.toString('utf8'));
         tempTrader.lastName = 'Bond';
-        await this.contract.submitTransaction('CRUDTrader', JSON.stringify(tempTrader), 'u');
+        await this.contract.submitTransaction('updateTrader', JSON.stringify(tempTrader));
         console.log('Temp trader details');
-        console.log('exists', (await this.contract.evaluateTransaction('CRUDTrader', JSON.stringify(tempTrader), 'e')).length !== 0);
-        res = await this.contract.evaluateTransaction('CRUDTrader', JSON.stringify(tempTrader), 'r');
+        console.log('exists', (await this.contract.evaluateTransaction('existsTrader', 'TEMP')).length !== 0);
+        res = await this.contract.evaluateTransaction('getTrader', 'TEMP');
         this.displayResource(res.toString('utf8'));
-        await this.contract.submitTransaction('CRUDTrader', JSON.stringify(tempTrader), 'd');
+        await this.contract.submitTransaction('deleteTrader', 'TEMP');
         console.log('Temp trader details');
-        console.log('exists', (await this.contract.evaluateTransaction('CRUDTrader', JSON.stringify(tempTrader), 'e')).length !== 0);
+        console.log('exists', (await this.contract.evaluateTransaction('existsTrader', 'TEMP')).length !== 0);
         console.log('------- TRADER ACTIONS END --------\n\n\n')
     }
 }

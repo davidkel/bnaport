@@ -23,12 +23,24 @@ export class QueryActions {
 
     async run(): Promise<void> {
         console.log('\n\n\n------- QUERY ACTIONS START --------')
+        console.log('selectCommodities -->')
+
         let resources: Buffer = await this.contract.evaluateTransaction('runQuery', 'selectCommodities');
         this.displayResources(resources.toString('utf8'));
-        console.log('------- QUERY ACTIONS END --------\n\n\n')
 
+        console.log('\n\ndynamic query -->')
         const myQuery: string = `{"selector":{"\\\\$class":"${TraderClass}"}}`;
         resources = await this.contract.evaluateTransaction('runDynamicQuery', myQuery);
         this.displayResources(resources.toString('utf8'));
+
+        console.log('\n\ntrader history -->')
+        resources = await this.contract.evaluateTransaction('getTraderHistory', 'TEMP');
+        this.displayResources(resources.toString('utf8'));
+
+        console.log('\n\ncommodity history -->')
+        resources = await this.contract.evaluateTransaction('getCommodityHistory', 'TempCom');
+        this.displayResources(resources.toString('utf8'));
+
+        console.log('------- QUERY ACTIONS END --------\n\n\n')
     }    
 }

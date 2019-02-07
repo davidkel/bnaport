@@ -10,15 +10,15 @@ import {TxActions} from './txactions';
 
     // load crypto material into the in memory wallet
     const inMemoryWallet: InMemoryWallet = new InMemoryWallet();
-    const cert: string = fs.readFileSync('../../../dave/cert.pem').toString();
-    const key: string = fs.readFileSync('../../../dave/key.pem').toString();
+    const cert: string = fs.readFileSync('./dave/cert.pem').toString();
+    const key: string = fs.readFileSync('./dave/key.pem').toString();
     // TODO: get mspid from ccp ?
     await inMemoryWallet.import('dave', X509WalletMixin.createIdentity('Org1MSP', cert, key));
     const exists: boolean = await inMemoryWallet.exists('dave');
     console.log('Dave exists:', exists);    
 
     // create the gateway
-    const buffer: Buffer = fs.readFileSync('../../../ccp-single.json');
+    const buffer: Buffer = fs.readFileSync('./ccp-single.json');
 
 	let gateway: Gateway = new Gateway();
 
