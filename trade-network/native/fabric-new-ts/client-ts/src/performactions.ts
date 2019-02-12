@@ -1,4 +1,4 @@
-import {Gateway, InMemoryWallet, Network, X509WalletMixin} from 'fabric-network';
+import {Contract, DiscoveryOptions, Gateway, InMemoryWallet, Network, X509WalletMixin, GatewayOptions} from 'fabric-network';
 import * as fs from 'fs';
 import {TraderActions} from './traderactions';
 import {CommodityActions} from './commodityactions';
@@ -7,26 +7,32 @@ import {TxActions} from './txactions';
 import {IdentityManager} from './identitymanager';
 
 // the ccp file to use
-const ccpFile = './ccp-single.json';
+const ccpFile: string = './ccp-single.json';
 
 // define the organisation name we will represent 
-const orgName = 'Org1';
+const orgName: string = 'Org1';
 
 // define the name, pw and wallet label of the ca registrar
-const caRegistrar = 'admin';
-const caRegistrarPW = 'adminpw';
-const caRegistrarWalletLabel = 'CAAdmin@org1';
+const caRegistrar: string = 'admin';
+const caRegistrarPW: string = 'adminpw';
+const caRegistrarWalletLabel: string = 'CAAdmin@org1';
 
 // define the name, pw and wallet lavel of the user to register (if not registered) and use.
-const userName = 'david';
-const userNamePW = 'davidpw';
-const userNameWalletLabel = 'david@org1';
+const userName: string = 'david';
+const userNamePW: string = 'davidpw';
+const userNameWalletLabel: string = 'david@org1';
+
+// define the channel/contract and discovery requirements
+const channel: string = 'composerchannel';
+const contractName: string = 'demo';
+const useDiscovery: boolean = false;
+const convertDiscoveredToLocalHost: boolean = null;
 
 (async () => {
     // load the connection profile
     const buffer: Buffer = fs.readFileSync(ccpFile);
-    const ccp = JSON.parse(buffer.toString());
-    const mspid = ccp.organizations[orgName].mspid;
+    const ccp: any = JSON.parse(buffer.toString());
+    const mspid: string = ccp.organizations[orgName].mspid;
 
     // manage identities
     const inMemoryWallet: InMemoryWallet = new InMemoryWallet();
@@ -59,20 +65,25 @@ const userNameWalletLabel = 'david@org1';
 */
 
     // create the gateway
-	let gateway: Gateway = new Gateway();
+    let gateway: Gateway = new Gateway();
+    const discoveryOptions: DiscoveryOptions = {enabled: useDiscovery};
+    if (useDiscovery && convertDiscoveredToLocalHost !== null) {
+        discoveryOptions.asLocalhost = convertDiscoveredToLocalHost;
+    }
 
 	try {
 		await gateway.connect(ccp, {
             wallet: inMemoryWallet,
             identity: userNameWalletLabel,
-            discovery: {enabled: false}
+            discovery: discoveryOptions
 		});
 
-        let network: Network = await gateway.getNetwork('composerchannel');
-        await (new TraderActions(network).run());
-        await (new CommodityActions(network)).run();
-        await (new TxActions(network)).run();
-        await (new QueryActions(network)).run();
+        let network: Network = await gateway.getNetwork(channel);
+        let contract: Contract = network.getContract(contractName);
+        await (new TraderActions(network, contract).run());
+        await (new CommodityActions(network, contract)).run();
+        await (new TxActions(network, contractName, mspid)).run();
+        await (new QueryActions(network, contract)).run();
 	} catch(error) {
 		console.log(error);
 	} finally {

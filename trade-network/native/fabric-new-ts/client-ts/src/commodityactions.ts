@@ -6,9 +6,9 @@ export class CommodityActions {
     network: Network;
     contract: Contract;
 
-    constructor(network: Network) {
+    constructor(network: Network, contract: Contract) {
         this.network = network;
-        this.contract = network.getContract('demo');
+        this.contract = contract;
     }
 
     displayResource(resource: string): void {

@@ -23,6 +23,12 @@ const userName = 'david';
 const userNamePW = 'davidpw';
 const userNameWalletLabel = 'david@org1';
 
+// define the channel/contract and discovery requirements
+const channel = 'composerchannel';
+const contractName = 'demo';
+const useDiscovery = false;
+const convertDiscoveredToLocalHost = null;
+
 (async () => {
 
     // load the connection profile
@@ -52,20 +58,26 @@ const userNameWalletLabel = 'david@org1';
     await idManager.enrollToWallet(userName, userNamePW, mspid, inMemoryWallet, userNameWalletLabel);
 
     // create the gateway
-	let gateway = new Gateway();
+    let gateway = new Gateway();
+    const discoveryOptions = {enabled: useDiscovery};
+    if (useDiscovery && convertDiscoveredToLocalHost !== null) {
+        discoveryOptions.asLocalhost = convertDiscoveredToLocalHost;
+    }
 
 	try {
-		await gateway.connect(JSON.parse(buffer.toString()), {
+		await gateway.connect(ccp, {
             wallet: inMemoryWallet,
             identity: userNameWalletLabel,
-            discovery: {enabled: false}
+            discovery: discoveryOptions
 		});
 
-        let network = await gateway.getNetwork('composerchannel');
-        await (new TraderActions(network).run());
-        await (new CommodityActions(network)).run();
-        await (new TxActions(network)).run();
-        await (new QueryActions(network)).run();
+        let network = await gateway.getNetwork(channel);
+        let contract = network.getContract(contractName);
+
+        await (new TraderActions(network, contract).run());
+        await (new CommodityActions(network, contract)).run();
+        await (new TxActions(network, contractName, mspid)).run();
+        await (new QueryActions(network, contract)).run();
 	} catch(error) {
 		console.log(error);
 	} finally {

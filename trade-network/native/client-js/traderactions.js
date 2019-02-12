@@ -1,8 +1,8 @@
 class TraderActions {
 
-    constructor(network) {
+    constructor(network, contract) {
         this.network = network;
-        this.contract = network.getContract('demo');
+        this.contract = contract;
     }
 
     displayResource(resource) {

@@ -4,10 +4,14 @@ import { Network, Contract } from 'fabric-network';
 export class TxActions {
     network: Network;
     contract: Contract;
+    contractName: string;
+    mspid: string;
 
-    constructor(network: Network) {
+    constructor(network: Network, contractName: string, mspid: string) {
         this.network = network;
-        this.contract = network.getContract('demo');
+        this.contractName = contractName;
+        this.mspid = mspid;
+        this.contract = network.getContract(contractName);
     }
 
     displayResources(resourcesStr: string) {
@@ -35,7 +39,7 @@ export class TxActions {
             eventError = reject;
         })
 
-        const chaincodeEventEmitter = new ChaincodeEventEmitter(this.network);
+        const chaincodeEventEmitter = new ChaincodeEventEmitter(this.network, this.mspid, this.contractName);
         await chaincodeEventEmitter.initialize();
         chaincodeEventEmitter.on('ChaincodeEvent', async (event) => {
             console.log(event);

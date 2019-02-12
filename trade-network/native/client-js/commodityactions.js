@@ -1,8 +1,8 @@
 class CommodityActions {
 
-    constructor(network) {
+    constructor(network, contract) {
         this.network = network;
-        this.contract = network.getContract('demo');
+        this.contract = contract;
         this.namespace = 'org.example.trading';
     }
 

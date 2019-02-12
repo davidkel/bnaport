@@ -8,7 +8,8 @@ import {Wallet} from 'fabric-network';
 const IdentityService = require('fabric-ca-client').IdentityService; 
 
 
-
+// These apis exist but aren't publically documented. They were an SPI
+// interface for wallet implementers to use.
 interface WalletWithSPI extends Wallet {
     setUserContext(client: Client, label: string) : Promise<Client.User>; 
     configureClientStores(client: Client, label: string): Promise<Client>;
@@ -28,9 +29,9 @@ export class IdentityManager {
         this.registrarId = id;
     }
 
-    getIdService() : CAClient.IdentityService {
+    _getIdService() : CAClient.IdentityService {
         if (!this.idService) {
-            this.idService = this.client.getCertificateAuthority().newIdentityService();  // TODO: cache
+            this.idService = this.client.getCertificateAuthority().newIdentityService();
         }
         return this.idService;
     }
@@ -40,13 +41,14 @@ export class IdentityManager {
         try {
             // are you kidding, this throws an error, why ???? couldn't you just pass the response back as
             // empty and also populate the response as described in the API ?
-            const resp: CAClient.IServiceResponse = await this.getIdService().getOne(userID, identity);
+            const resp: CAClient.IServiceResponse = await this._getIdService().getOne(userID, identity);
             return true;
         } catch(err) {
             return false;
         }
     }
 
+    
     async registerUser(userID: string, secret?: string, options?: any): Promise<string> {
         if (!options) {
             options = {};
@@ -93,7 +95,7 @@ export class IdentityManager {
             });
         }
 
-        const userSecret: string = await this.getIdService().create(registerRequest, identity);
+        const userSecret: string = await this._getIdService().create(registerRequest, identity);
         return userSecret;
     }
 

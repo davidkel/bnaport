@@ -2,9 +2,11 @@ const ChaincodeEventEmitter = require('./chaincodeeventemitter');
 
 class TxActions {
 
-    constructor(network) {
+    constructor(network, contractName, mspid) {
         this.network = network;
-        this.contract = network.getContract('demo');
+        this.contractName = contractName;
+        this.mspid = mspid;
+        this.contract = network.getContract(contractName);
     }
 
     displayResources(resourcesStr) {
@@ -33,7 +35,7 @@ class TxActions {
             eventError = reject;
         })
 
-        const chaincodeEventEmitter = new ChaincodeEventEmitter(this.network);
+        const chaincodeEventEmitter = new ChaincodeEventEmitter(this.network, this.mspid, this.contractName);
         await chaincodeEventEmitter.initialize();
         chaincodeEventEmitter.on('ChaincodeEvent', async (event) => {
             console.log(event);
