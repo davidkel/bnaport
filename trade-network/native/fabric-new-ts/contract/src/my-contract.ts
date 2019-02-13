@@ -103,17 +103,21 @@ export class MyContract extends Contract {
     }
 
     public async runDynamicQuery(ctx: Context, mango: string) {
-        console.log(mango);
+        // not good for large datasets as this code will load
+        // the complete result set into memory then return it
+        // should consider pagination if the result set is going
+        // to ge large
         const iterator: Iterators.StateQueryIterator = await ctx.stub.getQueryResult(mango);
         const results: Resource[] = await this._getAllResults(ctx, iterator);
 
+        /*
         const info: StateQueryResponse<Iterators.StateQueryIterator> = await ctx.stub.getQueryResultWithPagination(mango, 100);
         const iterator2: Iterators.StateQueryIterator = info.iterator;
         const md: QueryResponseMetadata = info.metadata;
         const bm: string = md.bookmark;
         const cc: number = md.fetched_records_count;
+        */
 
-        console.log('results', results);
         return results;
     }
 
@@ -186,33 +190,6 @@ export class MyContract extends Contract {
     // ------------------------------------------------------
     // ------------------------------------------------------
 
-    // bug in contract api, cannot be used.
-    /*
-    public async unknownTransaction(ctx) {
-        const {fcn, arg1} = ctx.stub.getFunctionAndParameters();
-        switch (fcn) {
-            case 'addCommodity':
-                return await this.CRUDCommodity(ctx, arg1, 'c');
-            case 'updateCommodity':
-                return await this.CRUDCommodity(ctx, arg1, 'u');
-            case 'readCommodity':
-                return await this.CRUDCommodity(ctx, arg1, 'r');
-            case 'deleteCommodity':
-                return await this.CRUDCommodity(ctx, arg1, 'd');
-            case 'addTrader':
-                return await this.CRUDTrader(ctx, arg1, 'c');
-            case 'updateTrader':
-                return await this.CRUDTrader(ctx, arg1, 'u');
-            case 'readTrader':
-                return await this.CRUDTrader(ctx, arg1, 'r');
-            case 'deleteTrader':
-                return await this.CRUDTrader(ctx, arg1, 'd');
-            default:
-                throw new Error(`You've asked to invoke a function that does not exist: ${fcn}`);
-        }
-    }
-    */
-
     // ------------------------------------------------------
     // Private methods, not TP functions to be called. These
     // provide equivalent composer capabilities not directly
@@ -235,10 +212,10 @@ export class MyContract extends Contract {
                 await ctx.stub.putState(compositeKey, Buffer.from(JSON.stringify(resource)));
                 return resource;
             case 'u':
-            if (state.length === 0) {
-                throw new Error(`Resource ${resource.$class} with id ${resource[idField]} doesn't exist`);
-            }
-            await ctx.stub.putState(compositeKey, Buffer.from(JSON.stringify(resource)));
+                if (state.length === 0) {
+                    throw new Error(`Resource ${resource.$class} with id ${resource[idField]} doesn't exist`);
+                }
+                await ctx.stub.putState(compositeKey, Buffer.from(JSON.stringify(resource)));
                 return resource;
             case 'd':
                 if (state.length === 0) {

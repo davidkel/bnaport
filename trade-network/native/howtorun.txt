@@ -1,1 +1,10 @@
+To start chaincode if fabric running in development mode
+npm run build // if using the typescript contract
 npm start -- --peer.address grpc://localhost:7052 --chaincode-id-name demo:0.0.1
+
+To run the javascript client
+node performactions.js
+
+To run the typescript client
+npm run build
+node dist/client-ts/src/performactions.js

@@ -1,9 +1,17 @@
 'use strict';
 const shim = require('fabric-shim');
 
-const namespace = 'org.example.trading';
-const CommodityClass = namespace + '.Commodity';
-const TraderClass = namespace + '.Trader';
+
+const AssetType = 'Asset';
+const ParticipantType = 'Participant';
+
+const Namespace = 'org.example.trading';
+const CommodityType = AssetType;
+const CommodityClass = Namespace + '.Commodity';
+const CommodityIdField = 'tradingSymbol';
+const TraderType = ParticipantType;
+const TraderClass = Namespace + '.Trader';
+const TraderIdField = 'tradeId';
 
 const selectCommodities = `{"selector":{"\\\\$class":"${CommodityClass}"}}`;
 const selectCommoditiesByExchange = `{"selector":{"\\\\$class":"${CommodityClass}","mainExchange":"%1"}}`;
@@ -19,6 +27,9 @@ const queryMap = {
 
 class TradeNetwork {
 
+    // ------------------------------------
+    // boilerplate function dispatcher code
+    //-------------------------------------
     async dispatch(stub) {
         const {fcn, params} = stub.getFunctionAndParameters();
         if (this[fcn]) {
@@ -58,9 +69,21 @@ class TradeNetwork {
         return await this.dispatch(stub);
     }
 
+    // ---------------------------------------
+    // ---------------------------------------
+    // ---------------------------------------
+
+    // ---------------------------------------
+    // actual business logic implementation
+    // ---------------------------------------
+
     async instantiate(stub) {
         console.info('instantiate');
     }
+
+    // ------------------------------------------------------
+    // methods to replicate in-built composer capability
+    // ------------------------------------------------------
 
     async addTrader(stub, traderStr) {
         return this.CRUDTrader(ctx, traderStr, 'c');
@@ -68,12 +91,18 @@ class TradeNetwork {
     async updateTrader(stub, traderStr) {
         return this.CRUDTrader(ctx, traderStr, 'u');
     }
-    async deleteTrader(stub, traderStr) {
-        return this.CRUDTrader(ctx, traderStr, 'd');
+    async deleteTrader(stub, tradeId) {
+        return this.CRUDTrader(ctx, `{"${TraderIdField}": "${tradeId}"}`, 'd');
     }
-    async getTrader(stub, traderStr) {
-        return this.CRUDTrader(ctx, traderStr, 'r');
+    async getTrader(stub, tradeId) {
+        return this.CRUDTrader(ctx, `{"${TraderIdField}": "${tradeId}"}`, 'r');
     }
+    async getTraderHistory(stub, tradeId) {
+        return this._historyForResource(ctx, TraderType, TraderClass, tradeId);
+    }
+    async existsTrader(stub, tradeId) {
+        return this.CRUDTrader(ctx, `{"${TraderIdField}": "${tradeId}"}`, 'e');
+    }    
 
     async addCommodity(stub, commodityStr) {
         return this.CRUDCommodity(ctx, commodityStr, 'c');
@@ -81,13 +110,19 @@ class TradeNetwork {
     async updateCommodity(stub, commodityStr) {
         return this.CRUDCommodity(ctx, commodityStr, 'u');
     }
-    async deleteCommodity(stub, commodityStr) {
-        return this.CRUDCommodity(ctx, commodityStr, 'd');
+    async deleteCommodity(stub, tradingSymbol) {
+        return this.CRUDCommodity(ctx, `{"${CommodityIdField}": "${tradingSymbol}"}`, 'd');
     }
-    async getCommodity(stub, commodityStr) {
-        return this.CRUDCommodity(ctx, commodityStr, 'R');
+    async getCommodity(stub, tradingSymbol) {
+        return this.CRUDCommodity(ctx, `{"${CommodityIdField}": "${tradingSymbol}"}`, 'r');
     }
-
+    async getCommodityHistory(stub, tradingSymbol) {
+        return this._historyForResource(ctx, CommodityType, CommodityClass, tradingSymbol);
+    }
+    async existsCommodity(stub, tradingSymbol) {
+        return this.CRUDCommodity(ctx, `{"${CommodityIdField}": "${tradingSymbol}"}`, 'e');
+    }
+   
     async CRUDTrader(stub, traderStr, action) {
         const trader = JSON.parse(traderStr);
         trader.$class = TraderClass;
@@ -101,10 +136,12 @@ class TradeNetwork {
     } 
     
     async runDynamicQuery(stub, mango) {
-        console.log(mango);
+        // not good for large datasets as this code will load
+        // the complete result set into memory then return it
+        // should consider pagination if the result set is going
+        // to ge large        
         const iterator = await stub.getQueryResult(mango);
         const results = await this.getAllResults(stub, iterator);
-        console.log('results', results);
         return results;
     }
 
@@ -133,6 +170,9 @@ class TradeNetwork {
         throw new Error(`${type}:${keys[0]} with id ${keys[1]} does not exist`);
     }
 
+    // ------------------------------------------------------
+    // ------------------------------------------------------
+    // ------------------------------------------------------    
 
     // ------------------------------------------------------
     // equivalent of the TP functions in trade-network
@@ -144,8 +184,14 @@ class TradeNetwork {
         const trade = JSON.parse(tradeStr);
         const commodityToUpdate = await this.resolveResource(stub, `${CommodityClass}#${trade.commodityId}`, 'Asset');
         commodityToUpdate.owner = `resource:${TraderClass}#${trade.newOwnerId}`;
+
+        // update the commodity
         const compositeKey = stub.createCompositeKey(`Asset:${CommodityClass}`, [commodityToUpdate.tradingSymbol]);
         await stub.putState(compositeKey, Buffer.from(JSON.stringify(commodityToUpdate)));
+        //        this._CRUDResource(ctx, CommodityType, commodityToUpdate, CommodityIdField, 'u');
+
+
+        // fire the chaincode event
         const event = [{action: 'trade', commodity: commodityToUpdate}];
         stub.setEvent('trade-network', Buffer.from(JSON.stringify(event)));
     }
@@ -157,38 +203,88 @@ class TradeNetwork {
         // on an array of promises
         const events = [];
         results.forEach(async (trade) => {
-            const compositeKey = stub.createCompositeKey('Asset:' + trade.$class, [trade.tradingSymbol]);
+            await this.deleteCommodity(stub, trade.tradingSymbol);
             const event = {action: 'remove', commodity: trade};
             events.push(event);
-            await stub.deleteState(compositeKey);
         });
         stub.setEvent('trade-network', Buffer.from(JSON.stringify(events)));
     }
 
+    // ------------------------------------------------------
+    // ------------------------------------------------------
+    // ------------------------------------------------------
+
+    // ------------------------------------------------------
+    // Private methods, not TP functions to be called. These
+    // provide equivalent composer capabilities not directly
+    // exposed
+    // ------------------------------------------------------
+    async _historyForResource(stub, type, $class, id) {
+        const compositeKey = stub.createCompositeKey(type + ':' + $class, [id]);
+        const historyIterator = await stub.getHistoryForKey(compositeKey);
+        return await this._getAllHistoryResults(stub, historyIterator);
+    }
+
     async CRUDResource(stub, type, resource, idField, action) {
         const compositeKey = stub.createCompositeKey(type + ':' + resource.$class, [resource[idField]]);
-        console.log(compositeKey, action);
+        const state = await stub.getState(compositeKey);
         switch (action) {
             case 'c':
+                if (state.length !== 0) {
+                    throw new Error(`Resource ${resource.$class} with id ${resource[idField]} exists`);
+                }
+                await stub.putState(compositeKey, Buffer.from(JSON.stringify(resource)));
+                return resource;
             case 'u':
+                if (state.length === 0) {
+                    throw new Error(`Resource ${resource.$class} with id ${resource[idField]} doesn't exist`);
+                }
                 await stub.putState(compositeKey, Buffer.from(JSON.stringify(resource)));
                 return resource;
             case 'd':
-                // TODO: Should check it exists first
+                if (state.length === 0) {
+                    throw new Error(`Resource ${resource.$class} with id ${resource[idField]} doesn't exist`);
+                }
                 await stub.deleteState(compositeKey);
                 return;
             case 'r':
-                const state = await stub.getState(compositeKey);
                 if (state.length) {
                     return JSON.parse(state.toString('utf8'));
                 }
                 throw new Error(`${type}:${resource.$class} with id ${resource[idField]} does not exist`);
             case 'e':
-                const state2 = await stub.getState(compositeKey);
-                return state2.length !== 0;
+                return state.length !== 0;
         }
     }
 
+    async _getAllHistoryResults(stub, iterator) {
+        const results = [];
+        let res = {done: false, value: null};
+        while (!res.done) {
+            res = await iterator.next();
+            const itVal = res.value;
+            if (itVal) {
+                let resp = {
+                    timestamp: itVal.timestamp,
+                    txid: itVal.tx_id
+                }
+                if (itVal.is_delete) {
+                   resp.data = 'DELETED';
+                } else {
+                   resp.data = JSON.parse(itVal.value.toString('utf8'));
+                }
+                results.push(resp);
+            }
+            if (res && res.done) {
+                try {
+                    await iterator.close();
+                } catch (err) {
+                    console.log(err);
+                }
+                return results;
+            }
+        }
+    }    
 
     async getAllResults(stub, iterator) {
         const results = [];
@@ -210,7 +306,11 @@ class TradeNetwork {
                 return results;
             }
         }
-    }    
+    }
+
+    // ------------------------------------------------------
+    // ------------------------------------------------------
+    // ------------------------------------------------------    
 }
 
 shim.start(new TradeNetwork());

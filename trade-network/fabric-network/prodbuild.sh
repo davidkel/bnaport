@@ -9,7 +9,7 @@ npm run build
 cd -
 
 mkdir -p ${PWD}/deployable/contract/dist
-mkdir -p ${PWD}/deployable/contract/statedb
+mkdir -p ${PWD}/deployable/contract/META-INF/statedb
 cp -R ../native/fabric-new-ts/contract/dist/* ${PWD}/deployable/contract/dist
-cp -R ../native/fabric-new-ts/contract/statedb/* ${PWD}/deployable/contract/statedb
+cp -R ../native/fabric-new-ts/contract/statedb/* ${PWD}/deployable/contract/META-INF/statedb
 cp ../native/fabric-new-ts/contract/package.json ${PWD}/deployable/contract
