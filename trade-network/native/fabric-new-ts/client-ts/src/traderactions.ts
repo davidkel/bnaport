@@ -23,7 +23,7 @@ export class TraderActions {
             lastName: last
         }
 
-        let exists: Buffer = await this.contract.evaluateTransaction('existsTrader', traderID);
+        const exists: Buffer = await this.contract.evaluateTransaction('existsTrader', traderID);
 
         if (!exists.length) {
             await this.contract.submitTransaction('addTrader', JSON.stringify(trader));

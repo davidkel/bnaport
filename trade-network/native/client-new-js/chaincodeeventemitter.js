@@ -1,7 +1,20 @@
 const EventEmitter = require('events');
 
+/**
+ * This class provides a simple way to register for chaincode events
+ * and have them emitted through the event emitter capabilities of
+ * node. This implementation does not provide any support for
+ * 1. guaranteed delivery through event replay
+ * 2. Any mechanism to recover from loss of connection to the event hub
+ */
 class ChaincodeEventEmitter extends EventEmitter {
 
+    /**
+     * constructor
+     * @param network The network instance from the gateway
+     * @param mspid your organisations mspid
+     * @param contractName the contractName (chaincodeid) for the events
+     */    
     constructor(network, mspid, contractName) {
         super();
         this.network = network;
@@ -9,6 +22,10 @@ class ChaincodeEventEmitter extends EventEmitter {
         this.contractName = contractName;
     }
 
+    /**
+     * initialize this chaincode event emitter by creating a channel event
+     * hub and registering to listen for chaincode events.
+     */
     async initialize() {
         const channel = this.network.getChannel();
         const peers = channel.getPeersForOrg(this.mspid);
@@ -48,7 +65,12 @@ class ChaincodeEventEmitter extends EventEmitter {
         
     }
 
-    disconnect() {
+    /**
+     * destroy this chaincode event emitter. You must call this when you
+     * are no longer interested is receiving chaincode events otherwise your
+     * application will hang on termination 
+     */    
+    destroy() {
         this.eventHub.unregisterChaincodeEvent(this.handle);
         this.eventHub.disconnect();  // must disconnect the event hub or app will hang
     }

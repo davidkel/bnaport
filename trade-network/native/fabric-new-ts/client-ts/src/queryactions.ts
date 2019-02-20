@@ -1,5 +1,5 @@
 import {Contract, Network} from 'fabric-network';
-import {CommodityClass, Namespace, TraderClass} from '../../model/trade-model';
+import {TraderClass} from '../../model/trade-model';
 
 export class QueryActions {
 

@@ -53,12 +53,12 @@ class TxActions {
         // send transaction
         try {
             await this.contract.submitTransaction('tradeCommodity', JSON.stringify(trade));
-            let event = await eventPromise;
+            await eventPromise;
             console.log('------- TX ACTIONS END --------\n\n\n')
         } catch(err) {
             console.log(err);
         } finally {
-            chaincodeEventEmitter.disconnect();
+            chaincodeEventEmitter.destroy();
         }
     }    
 }

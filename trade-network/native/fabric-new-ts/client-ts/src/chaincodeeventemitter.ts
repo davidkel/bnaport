@@ -2,7 +2,13 @@ import {EventEmitter} from 'events'
 import { Network } from 'fabric-network';
 import { Channel, Peer, ChannelEventHub, ChannelPeer, ChaincodeEvent } from 'fabric-client';
 
-
+/**
+ * This class provides a simple way to register for chaincode events
+ * and have them emitted through the event emitter capabilities of
+ * node. This implementation does not provide any support for
+ * 1. guaranteed delivery through event replay
+ * 2. Any mechanism to recover from loss of connection to the event hub
+ */
 export class ChaincodeEventEmitter extends EventEmitter {
 
     network: Network;
@@ -11,13 +17,23 @@ export class ChaincodeEventEmitter extends EventEmitter {
     mspid: string;
     contractName: string;
 
-    constructor(network: Network, mspid: string, contractName) {
+    /**
+     * constructor
+     * @param network The network instance from the gateway
+     * @param mspid your organisations mspid
+     * @param contractName the contractName (chaincodeid) for the events
+     */
+    constructor(network: Network, mspid: string, contractName: string) {
         super();
         this.network = network;
         this.mspid = mspid;
         this.contractName = contractName;
     }
 
+    /**
+     * initialize this chaincode event emitter by creating a channel event
+     * hub and registering to listen for chaincode events.
+     */
     async initialize(): Promise<void> {
         const channel: Channel = this.network.getChannel();
         const peers: ChannelPeer[] = channel.getPeersForOrg(this.mspid);
@@ -58,7 +74,12 @@ export class ChaincodeEventEmitter extends EventEmitter {
         
     }
 
-    disconnect() : void {
+    /**
+     * destroy this chaincode event emitter. You must call this when you
+     * are no longer interested is receiving chaincode events otherwise your
+     * application will hang on termination 
+     */
+    destroy() : void {
         this.eventHub.unregisterChaincodeEvent(this.handle);
         this.eventHub.disconnect();  // must disconnect the event hub or app will hang
     }

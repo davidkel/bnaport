@@ -8,6 +8,7 @@ import {
     Commodity,
     CommodityClass,
     CommodityIdField,
+    CommodityType,
     Reference,
     Resource,
     Trade,
@@ -15,7 +16,6 @@ import {
     TraderClass,
     TraderIdField,
     TraderType,
-    CommodityType,
 } from '../../model/trade-model';
 
 // TODO: Should the transaction request be modelled or just a set of parameters (currently modelled)
@@ -240,10 +240,10 @@ export class MyContract extends Contract {
             res = await iterator.next();
             const itVal: Iterators.KeyModification = res.value;
             if (itVal) {
-                let resp: any = {
+                const resp: any = {
                     timestamp: itVal.timestamp,
-                    txid: itVal.tx_id
-                }
+                    txid: itVal.tx_id,
+                };
                 if (itVal.is_delete) {
                    resp.data = 'DELETED';
                 } else {

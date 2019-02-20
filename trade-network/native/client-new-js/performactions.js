@@ -1,3 +1,6 @@
+// This is the main program to drive this contrived client
+// run this script.
+
 const {Gateway, Network, Channel, Contract, InMemoryWallet, X509WalletMixin} = require('fabric-network');
 const fs = require('fs');
 
@@ -30,7 +33,6 @@ const useDiscovery = false;
 const convertDiscoveredToLocalHost = null;
 
 (async () => {
-
     // load the connection profile
     const buffer = fs.readFileSync(ccpFile);
     const ccp = JSON.parse(buffer.toString());
@@ -58,7 +60,7 @@ const convertDiscoveredToLocalHost = null;
     await idManager.enrollToWallet(userName, userNamePW, mspid, inMemoryWallet, userNameWalletLabel);
 
     // create the gateway
-    let gateway = new Gateway();
+    const gateway = new Gateway();
     const discoveryOptions = {enabled: useDiscovery};
     if (useDiscovery && convertDiscoveredToLocalHost !== null) {
         discoveryOptions.asLocalhost = convertDiscoveredToLocalHost;
@@ -71,9 +73,9 @@ const convertDiscoveredToLocalHost = null;
             discovery: discoveryOptions
 		});
 
-        let network = await gateway.getNetwork(channel);
-        let contract = network.getContract(contractName);
-
+        // invoke the various different types of tasks.
+        const network = await gateway.getNetwork(channel);
+        const contract = network.getContract(contractName);
         await (new TraderActions(network, contract).run());
         await (new CommodityActions(network, contract)).run();
         await (new TxActions(network, contractName, mspid)).run();

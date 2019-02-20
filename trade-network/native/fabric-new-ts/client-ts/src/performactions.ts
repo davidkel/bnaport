@@ -1,3 +1,6 @@
+// This is the main program to drive this contrived client
+// run this script.
+
 import {Contract, DiscoveryOptions, Gateway, InMemoryWallet, Network, X509WalletMixin, GatewayOptions} from 'fabric-network';
 import * as fs from 'fs';
 import {TraderActions} from './traderactions';
@@ -65,7 +68,7 @@ const convertDiscoveredToLocalHost: boolean = null;
 */
 
     // create the gateway
-    let gateway: Gateway = new Gateway();
+    const gateway: Gateway = new Gateway();
     const discoveryOptions: DiscoveryOptions = {enabled: useDiscovery};
     if (useDiscovery && convertDiscoveredToLocalHost !== null) {
         discoveryOptions.asLocalhost = convertDiscoveredToLocalHost;
@@ -78,8 +81,9 @@ const convertDiscoveredToLocalHost: boolean = null;
             discovery: discoveryOptions
 		});
 
-        let network: Network = await gateway.getNetwork(channel);
-        let contract: Contract = network.getContract(contractName);
+        // invoke the various different types of tasks.
+        const network: Network = await gateway.getNetwork(channel);
+        const contract: Contract = network.getContract(contractName);
         await (new TraderActions(network, contract).run());
         await (new CommodityActions(network, contract)).run();
         await (new TxActions(network, contractName, mspid)).run();

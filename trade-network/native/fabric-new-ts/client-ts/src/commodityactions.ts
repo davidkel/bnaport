@@ -1,5 +1,5 @@
 import {Contract, Network} from 'fabric-network';
-import {Commodity, Namespace} from '../../model/trade-model';
+import {Commodity, TraderClass} from '../../model/trade-model';
 
 export class CommodityActions {
 
@@ -24,7 +24,7 @@ export class CommodityActions {
             owner
         }
 
-        let exists: Buffer = await this.contract.evaluateTransaction('existsCommodity', tradingSymbol);
+        const exists: Buffer = await this.contract.evaluateTransaction('existsCommodity', tradingSymbol);
 
         if (!exists.length) {
             await this.contract.submitTransaction('addCommodity', JSON.stringify(commodity));
@@ -44,7 +44,7 @@ export class CommodityActions {
         console.log('\n\n\n------- COMMODITY ACTIONS START --------')
 
         // create a Commodity
-        this.createCommodity('C1', 'Some commodities', 'NASDAQ', 2582, `resource:${Namespace}.Trader#T1`);
+        this.createCommodity('C1', 'Some commodities', 'NASDAQ', 2582, `resource:${TraderClass}#T1`);
 
         // do full CRUD on a commodity
         const tempCommodity: Commodity = {
@@ -52,7 +52,7 @@ export class CommodityActions {
             mainExchange: 'NASDAQ',
             description: 'temporary commodities',
             quantity: 611,
-            owner: `resource:${Namespace}.Trader#T1`
+            owner: `resource:${TraderClass}#T1`
         }
 
         await this.contract.submitTransaction('addCommodity', JSON.stringify(tempCommodity));

@@ -17,8 +17,7 @@ class TraderActions {
             lastName: last
         }
 
-        //let exists = await this.contract.evaluateTransaction('existsTrader', JSON.stringify(trader));
-        let exists = await this.contract.evaluateTransaction('CRUDTrader', JSON.stringify(trader), 'e');
+        const exists = await this.contract.evaluateTransaction('existsTrader', traderID);
 
         if (!exists.length) {
             await this.contract.submitTransaction('CRUDTrader', JSON.stringify(trader), 'c');

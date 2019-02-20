@@ -19,7 +19,7 @@ class CommodityActions {
             owner
         }
 
-        let exists = await this.contract.evaluateTransaction('CRUDCommodity', JSON.stringify(commodity), 'e');
+        const exists = await this.contract.evaluateTransaction('CRUDCommodity', JSON.stringify(commodity), 'e');
 
         if (!exists.length) {
             await this.contract.submitTransaction('CRUDCommodity', JSON.stringify(commodity), 'c');
