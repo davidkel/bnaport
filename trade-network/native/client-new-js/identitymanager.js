@@ -1,29 +1,53 @@
 'use strict';
 
 const Client = require('fabric-client');
-const User = require('fabric-client/lib/User');
+const {Gateway, X509WalletMixin} = require('fabric-network');
 
 class IdentityManager {
 
     initialize(ccp, wallet, id) {
-        this.client = Client.loadFromConfig(ccp);
-        this.registrarWallet = wallet;
-        this.registrarId = id;        
+        this.wallet = wallet;
+        this.registrarId = id;  
+        this.ccp = ccp;      
     }
 
-    getIdService() {
+    async getClient() {
+        if (!this.client) {
+            this.client = Client.loadFromConfig(this.ccp);
+            const cryptoSuite = Client.newCryptoSuite();
+            cryptoSuite.setCryptoKeyStore(Client.newCryptoKeyStore());
+            this.client.setCryptoSuite(cryptoSuite);
+        }
+        return this.client;
+    }
+
+    async getGateway() {
+        if (!this.gateway) {
+            this.gateway = new Gateway();
+            await this.gateway.connect(this.ccp, {
+                wallet: this.wallet,
+                identity: this.registrarId
+            });
+        }
+        return this.gateway;
+    }
+
+    async getIdService() {
         if (!this.idService) {
-            this.idService = this.client.getCertificateAuthority().newIdentityService();  // TODO: cache
+            const gateway = await this.getGateway();
+            this.idService = gateway.getClient().getCertificateAuthority().newIdentityService();
         }
         return this.idService;
     }
 
     async exists(userID) {
-        const identity = await (this.registrarWallet).setUserContext(this.client, this.registrarId);
+        const gateway = await this.getGateway();
+        const identity = gateway.getCurrentIdentity();
         try {
             // are you kidding, this throws an error, why ???? couldn't you just pass the response back as
             // empty and also populate the response as described in the API ?
-            const resp = await this.getIdService().getOne(userID, identity);
+            const idService = await this.getIdService();
+            const resp = await idService.getOne(userID, identity);
             return true;
         } catch(err) {
             return false;
@@ -34,7 +58,6 @@ class IdentityManager {
         if (!options) {
             options = {};
         }
-        const identity = await (this.registrarWallet).setUserContext(this.client, this.registrarId);
 
         let registerRequest = {
             enrollmentID: userID,
@@ -75,24 +98,19 @@ class IdentityManager {
                 value: idAttributes[attribute]
             });
         }
-
-        const userSecret = await this.getIdService().create(registerRequest, identity);
+        const gateway = await this.getGateway();
+        const identity = gateway.getCurrentIdentity();
+        const idService = await this.getIdService();
+        const userSecret = await idService.create(registerRequest,identity);
         return userSecret;
     }
 
     async enrollToWallet(userID, secret, mspId, walletToImportTo, label) {
-        await (walletToImportTo).configureClientStores(this.client, label);
-        let options = { enrollmentID: userID, enrollmentSecret: secret };
-        const enrollment = await this.client.getCertificateAuthority().enroll(options);
-        // private key will now have been stored
-
-        let user = new User(label);
-        user.setCryptoSuite(this.client.getCryptoSuite());
-        await user.setEnrollment(enrollment.key, enrollment.certificate, mspId);
-        // public key will now have been stored
-        await this.client.setUserContext(user);
-        // state store will now have been saved
-
+        let options = { enrollmentID: userID, enrollmentSecret: secret };  
+        const client = await this.getClient();      
+        const enrollment = await client.getCertificateAuthority().enroll(options);
+        const userIdentity = X509WalletMixin.createIdentity(mspId, enrollment.certificate, enrollment.key.toBytes());
+        await walletToImportTo.import(label, userIdentity);
     }
 }
 

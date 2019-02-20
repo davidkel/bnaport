@@ -3,18 +3,8 @@
 import Client = require('fabric-client');
 import CAClient = require('fabric-ca-client');
 import {User, IIdentity} from 'fabric-client';
-import {Wallet} from 'fabric-network';
-//import {IdentityService} from 'fabric-ca-client';  // BUG in TS
+import {Wallet, Gateway, X509WalletMixin, Identity} from 'fabric-network';
 const IdentityService = require('fabric-ca-client').IdentityService; 
-
-
-// These apis exist but aren't publically documented. They were an SPI
-// interface for wallet implementers to use.
-interface WalletWithSPI extends Wallet {
-    setUserContext(client: Client, label: string) : Promise<Client.User>; 
-    configureClientStores(client: Client, label: string): Promise<Client>;
-}
-
 
 export class IdentityManager {
 
@@ -22,26 +12,52 @@ export class IdentityManager {
     idService: CAClient.IdentityService;
     registrarWallet: Wallet;
     registrarId: string;
+    ccp: any;
+    gateway: Gateway;
 
     initialize(ccp: any, wallet: Wallet, id: string) {
-        this.client = Client.loadFromConfig(ccp);
         this.registrarWallet = wallet;
         this.registrarId = id;
+        this.ccp = ccp;
     }
 
-    _getIdService() : CAClient.IdentityService {
+    async _getClient(): Promise<Client> {
+        if (!this.client) {
+            this.client = Client.loadFromConfig(this.ccp);
+            const cryptoSuite: Client.ICryptoSuite = Client.newCryptoSuite();
+            cryptoSuite.setCryptoKeyStore(Client.newCryptoKeyStore());
+            this.client.setCryptoSuite(cryptoSuite);
+        }
+        return this.client;
+    }
+
+    async _getGateway(): Promise<Gateway> {
+        if (!this.gateway) {
+            this.gateway = new Gateway();
+            await this.gateway.connect(this.ccp, {
+                wallet: this.registrarWallet,
+                identity: this.registrarId
+            });
+        }
+        return this.gateway;
+    }    
+
+    async _getIdService() : Promise<CAClient.IdentityService> {
         if (!this.idService) {
-            this.idService = this.client.getCertificateAuthority().newIdentityService();
+            const gateway: Gateway = await this._getGateway();
+            this.idService = gateway.getClient().getCertificateAuthority().newIdentityService();
         }
         return this.idService;
     }
 
-    async exists(userID): Promise<boolean> {
-        const identity: Client.User = await (<WalletWithSPI>this.registrarWallet).setUserContext(this.client, this.registrarId);
+    async exists(userID: string): Promise<boolean> {
+        const gateway = await this._getGateway();
+        const identity: Client.User = gateway.getCurrentIdentity();        
         try {
             // are you kidding, this throws an error, why ???? couldn't you just pass the response back as
             // empty and also populate the response as described in the API ?
-            const resp: CAClient.IServiceResponse = await this._getIdService().getOne(userID, identity);
+            const idService: CAClient.IdentityService = await this._getIdService();
+            const resp: CAClient.IServiceResponse = await idService.getOne(userID, identity);
             return true;
         } catch(err) {
             return false;
@@ -53,7 +69,6 @@ export class IdentityManager {
         if (!options) {
             options = {};
         }
-        const identity: Client.User = await (<WalletWithSPI>this.registrarWallet).setUserContext(this.client, this.registrarId);
 
         let registerRequest: CAClient.IRegisterRequest  = {
             enrollmentID: userID,
@@ -95,23 +110,19 @@ export class IdentityManager {
             });
         }
 
-        const userSecret: string = await this._getIdService().create(registerRequest, identity);
+        const gateway: Gateway = await this._getGateway();
+        const identity: Client.User = gateway.getCurrentIdentity();
+        const idService: CAClient.IdentityService = await this._getIdService();
+        const userSecret: string = await idService.create(registerRequest,identity);
         return userSecret;
     }
 
     async enrollToWallet(userID: string, secret: string, mspId: string, walletToImportTo: Wallet, label: string): Promise<void> {
-        await (<WalletWithSPI>walletToImportTo).configureClientStores(this.client, label);
         let options: CAClient.IEnrollmentRequest = { enrollmentID: userID, enrollmentSecret: secret };
-        const enrollment: CAClient.IEnrollResponse = await this.client.getCertificateAuthority().enroll(options);
-        // private key will now have been stored
-
-        let user: User = new User(label);
-        user.setCryptoSuite(this.client.getCryptoSuite());
-        await user.setEnrollment(enrollment.key, enrollment.certificate, mspId);
-        // public key will now have been stored
-        await this.client.setUserContext(user);
-        // state store will now have been saved
-
+        const client: Client = await this._getClient();
+        const enrollment: CAClient.IEnrollResponse = await client.getCertificateAuthority().enroll(options);
+        const userIdentity: Identity = X509WalletMixin.createIdentity(mspId, enrollment.certificate, enrollment.key.toBytes());
+        await walletToImportTo.import(label, userIdentity);
     }
 
 }
