@@ -10,6 +10,6 @@ ARCH=`uname -m`
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Shut down the Docker containers that might be currently running.
-DOCKER_FILE="${DIR}"/composer/docker-compose.yml
+DOCKER_FILE="${DIR}"/localfabric/docker-compose.yml
 
 ARCH=$ARCH docker-compose -f "${DOCKER_FILE}" stop

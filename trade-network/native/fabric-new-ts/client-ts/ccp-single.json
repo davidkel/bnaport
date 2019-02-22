@@ -15,7 +15,7 @@
         }
     },
     "channels": {
-        "composerchannel": {
+        "mychannel": {
             "orderers": [
                 "orderer.example.com"
             ],

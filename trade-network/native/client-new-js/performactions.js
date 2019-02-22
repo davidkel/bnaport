@@ -27,7 +27,7 @@ const userNamePW = 'davidpw';
 const userNameWalletLabel = 'david@org1';
 
 // define the channel/contract and discovery requirements
-const channel = 'composerchannel';
+const channel = 'mychannel';
 const contractName = 'trade-network';
 const useDiscovery = false;
 const convertDiscoveredToLocalHost = null;

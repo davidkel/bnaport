@@ -42,11 +42,11 @@ ARCH=`uname -m`
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 if [ "${FABRIC_DEV_MODE}" == "true" ]; then
-    # DOCKER_FILE="${DIR}"/composer/docker-compose-dev-2-peer.yml
-    DOCKER_FILE="${DIR}"/composer/docker-compose-dev.yml
+    # DOCKER_FILE="${DIR}"/localfabric/docker-compose-dev-2-peer.yml
+    DOCKER_FILE="${DIR}"/localfabric/docker-compose-dev.yml
 else
-    # DOCKER_FILE="${DIR}"/composer/docker-compose-2-peer.yml
-    DOCKER_FILE="${DIR}"/composer/docker-compose.yml
+    # DOCKER_FILE="${DIR}"/localfabric/docker-compose-2-peer.yml
+    DOCKER_FILE="${DIR}"/localfabric/docker-compose.yml
 fi
 
 ARCH=$ARCH docker-compose -f "${DOCKER_FILE}" down
@@ -58,17 +58,17 @@ echo "sleeping for ${FABRIC_START_TIMEOUT} seconds to wait for fabric to complet
 sleep ${FABRIC_START_TIMEOUT}
 
 # Create the channel
-docker exec -e "CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/users/Admin@org1.example.com/msp" -e "CORE_PEER_LOCALMSPID=Org1MSP" peer0.org1.example.com peer channel create -o orderer.example.com:7050 -c composerchannel -f /etc/hyperledger/configtx/composer-channel.tx
+docker exec -e "CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/users/Admin@org1.example.com/msp" -e "CORE_PEER_LOCALMSPID=Org1MSP" peer0.org1.example.com peer channel create -o orderer.example.com:7050 -c mychannel -f /etc/hyperledger/configtx/my-channel.tx
 
 # Join peer0.org1.example.com to the channel.
-docker exec -e "CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/users/Admin@org1.example.com/msp" peer0.org1.example.com peer channel join -b composerchannel.block
+docker exec -e "CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/users/Admin@org1.example.com/msp" peer0.org1.example.com peer channel join -b mychannel.block
 
-echo fetching block
-docker exec -e "CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/users/Admin@org1.example.com/msp" peer1.org1.example.com peer channel fetch config -o orderer.example.com:7050 -c composerchannel composerchannel.block
+#echo fetching block
+#docker exec -e "CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/users/Admin@org1.example.com/msp" peer1.org1.example.com peer channel fetch config -o orderer.example.com:7050 -c mychannel mychannel.block
 
 # Join peer1.org1.example.com to the channel.
-echo joining peer1
-docker exec -e "CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/users/Admin@org1.example.com/msp" peer1.org1.example.com peer channel join -b composerchannel.block
+#echo joining peer1
+#docker exec -e "CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/users/Admin@org1.example.com/msp" peer1.org1.example.com peer channel join -b mychannel.block
 
 if [ "${FABRIC_DEV_MODE}" == "true" ]; then
     echo "Fabric Network started in chaincode development mode"
