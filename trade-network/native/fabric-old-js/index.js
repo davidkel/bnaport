@@ -188,7 +188,7 @@ class TradeNetwork {
         // update the commodity
         const compositeKey = stub.createCompositeKey(`Asset:${CommodityClass}`, [commodityToUpdate.tradingSymbol]);
         await stub.putState(compositeKey, Buffer.from(JSON.stringify(commodityToUpdate)));
-        //        this._CRUDResource(ctx, CommodityType, commodityToUpdate, CommodityIdField, 'u');
+        //        await this._CRUDResource(ctx, CommodityType, commodityToUpdate, CommodityIdField, 'u');
 
 
         // fire the chaincode event

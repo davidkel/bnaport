@@ -165,7 +165,7 @@ export class MyContract extends Contract {
         commodityToUpdate.owner = `resource:${TraderClass}#${trade.newOwnerId}`;
 
         // update the commodity.
-        this._CRUDResource(ctx, CommodityType, commodityToUpdate, CommodityIdField, 'u');
+        await this._CRUDResource(ctx, CommodityType, commodityToUpdate, CommodityIdField, 'u');
 
         // fire the chaincode event
         const event = [{action: 'trade', commodity: commodityToUpdate}];
