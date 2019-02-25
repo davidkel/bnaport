@@ -5,6 +5,10 @@
     ],
     "jsRules": {},
     "rules": {
+        "object-literal-sort-keys": false,
+        "trailing-comma": false,
+        "member-ordering":false,
+        "no-unused-variable": true,
         "indent": [true, "spaces", 4],
         "linebreak-style": [true, "LF"],
         "quotemark": [true, "single"],

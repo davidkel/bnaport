@@ -1,6 +1,6 @@
-import {EventEmitter} from 'events'
+import {EventEmitter} from 'events';
+import { ChaincodeEvent, Channel, ChannelPeer } from 'fabric-client';
 import { Network } from 'fabric-network';
-import { Channel, Peer, ChannelEventHub, ChannelPeer, ChaincodeEvent } from 'fabric-client';
 
 /**
  * This class provides a simple way to register for chaincode events
@@ -11,11 +11,11 @@ import { Channel, Peer, ChannelEventHub, ChannelPeer, ChaincodeEvent } from 'fab
  */
 export class ChaincodeEventEmitter extends EventEmitter {
 
-    network: Network;
-    eventHub: any; //Bug ChannelEventHub not declared correctly;
-    handle: any; // Bug: not been exported ChaincodeChannelEventHandle
-    mspid: string;
-    contractName: string;
+    private network: Network;
+    private eventHub: any; // Bug ChannelEventHub not declared correctly;
+    private handle: any; // Bug: not been exported ChaincodeChannelEventHandle
+    private mspid: string;
+    private contractName: string;
 
     /**
      * constructor
@@ -34,7 +34,7 @@ export class ChaincodeEventEmitter extends EventEmitter {
      * initialize this chaincode event emitter by creating a channel event
      * hub and registering to listen for chaincode events.
      */
-    async initialize(): Promise<void> {
+    public async initialize(): Promise<void> {
         const channel: Channel = this.network.getChannel();
         const peers: ChannelPeer[] = channel.getPeersForOrg(this.mspid);
         this.eventHub = channel.newChannelEventHub(peers[0].getPeer());
@@ -58,28 +58,27 @@ export class ChaincodeEventEmitter extends EventEmitter {
                     let evt: any = event.payload.toString('utf8');
                     evt = JSON.parse(evt);
                     if (Array.isArray(evt)) {
-                        for(const oneEvent of evt) {
+                        for (const oneEvent of evt) {
                             this.emit('ChaincodeEvent', oneEvent);
                         }
-                    }
-                    else {
+                    } else {
                         this.emit('ChaincodeEvent', evt);
                     }
                 }
             },
-            (err) => {
+            (err: Error) => {
                 this.emit('error', err);
-            }
+            },
         );
-        
+
     }
 
     /**
      * destroy this chaincode event emitter. You must call this when you
      * are no longer interested is receiving chaincode events otherwise your
-     * application will hang on termination 
+     * application will hang on termination
      */
-    destroy() : void {
+    public destroy(): void {
         this.eventHub.unregisterChaincodeEvent(this.handle);
         this.eventHub.disconnect();  // must disconnect the event hub or app will hang
     }

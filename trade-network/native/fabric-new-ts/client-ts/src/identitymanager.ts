@@ -1,22 +1,21 @@
 'use strict';
-
-import Client = require('fabric-client');
 import CAClient = require('fabric-ca-client');
-import {Wallet, Gateway, X509WalletMixin, Identity} from 'fabric-network';
+import Client = require('fabric-client');
+import {Gateway, Identity, Wallet, X509WalletMixin} from 'fabric-network';
 
 /**
  * This class provides a simple way to interact with the fabric-ca server
- * to register new users for enrolment as well as enrol a user directly 
+ * to register new users for enrolment as well as enrol a user directly
  * into a wallet.
  */
 export class IdentityManager {
 
-    client: Client;
-    idService: CAClient.IdentityService;
-    registrarWallet: Wallet;
-    registrarLabel: string;
-    ccp: any;
-    gateway: Gateway;
+    private client: Client;
+    private idService: CAClient.IdentityService;
+    private registrarWallet: Wallet;
+    private registrarLabel: string;
+    private ccp: any;
+    private gateway: Gateway;
 
     /**
      * initialize the identity manager
@@ -24,7 +23,7 @@ export class IdentityManager {
      * @param registrarWallet The wallet that contains or will contain the registrar identity
      * @param registrarLabel The label of the registrar identity in the wallet
      */
-    initialize(ccp: any, registrarWallet: Wallet, registrarLabel: string) {
+    public initialize(ccp: any, registrarWallet: Wallet, registrarLabel: string) {
         this.registrarWallet = registrarWallet;
         this.registrarLabel = registrarLabel;
         this.ccp = ccp;
@@ -33,7 +32,7 @@ export class IdentityManager {
     /**
      * Internal method to get a client with an ephemeral cryptosuite generator
      */
-    async _getClient(): Promise<Client> {
+    private async _getClient(): Promise<Client> {
         if (!this.client) {
             this.client = Client.loadFromConfig(this.ccp);
             const cryptoSuite: Client.ICryptoSuite = Client.newCryptoSuite();
@@ -48,7 +47,7 @@ export class IdentityManager {
      * This is currently the only documented way to easily access the wallet contents
      * to get a user object for interaction with the fabric-ca-client apis.
      */
-    async _getGateway(): Promise<Gateway> {
+    private async _getGateway(): Promise<Gateway> {
         if (!this.gateway) {
             this.gateway = new Gateway();
             await this.gateway.connect(this.ccp, {
@@ -57,12 +56,12 @@ export class IdentityManager {
             });
         }
         return this.gateway;
-    }    
+    }
 
     /**
      * Internal method to get the Identity Service
      */
-    async _getIdService() : Promise<CAClient.IdentityService> {
+    private async _getIdService(): Promise<CAClient.IdentityService> {
         if (!this.idService) {
             const gateway: Gateway = await this._getGateway();
             this.idService = gateway.getClient().getCertificateAuthority().newIdentityService();
@@ -74,17 +73,17 @@ export class IdentityManager {
      * Check to see if the userid is registered to the fabric-ca server
      * @param userID the userid to check
      */
-    async exists(userID: string): Promise<boolean> {
+    public async exists(userID: string): Promise<boolean> {
         const gateway: Gateway = await this._getGateway();
-        const identity: Client.User = gateway.getCurrentIdentity();        
+        const identity: Client.User = gateway.getCurrentIdentity();
         try {
             const idService: CAClient.IdentityService = await this._getIdService();
             // annoyingly although the response has provision to provide the errors
             // returned, what actually happens here is that it throws an error if
-            // the user doesn't exist. 
+            // the user doesn't exist.
             const resp: CAClient.IServiceResponse = await idService.getOne(userID, identity);
             return true;
-        } catch(err) {
+        } catch (err) {
             // TODO: we currently assume that any error means it doesn't exist but it
             // could easily be another error
             return false;
@@ -99,7 +98,7 @@ export class IdentityManager {
      * @param secret [optional] the secret to associate with the user
      * @param options [optional] extra options such as extended attributes or affiliation
      */
-    async registerUser(userID: string, secret?: string, options?: any): Promise<string> {
+    public async registerUser(userID: string, secret?: string, options?: any): Promise<string> {
         if (!options) {
             options = {};
         }
@@ -128,30 +127,29 @@ export class IdentityManager {
         }
 
         if (options.attributes) {
-            registerRequest.attrs = registerRequest.attrs.concat(options.atttributes);            
+            registerRequest.attrs = registerRequest.attrs.concat(options.atttributes);
         }
 
         const gateway: Gateway = await this._getGateway();
         const identity: Client.User = gateway.getCurrentIdentity();
         const idService: CAClient.IdentityService = await this._getIdService();
-        const userSecret: string = await idService.create(registerRequest,identity);
+        const userSecret: string = await idService.create(registerRequest, identity);
         return userSecret;
     }
 
     /**
-     * enroll a user to the provided wallet. 
+     * enroll a user to the provided wallet.
      * @param userID The userid to enroll
      * @param secret The secret of the userid
      * @param mspId the mspId of the user
-     * @param walletToImportTo the wallet to import to 
+     * @param walletToImportTo the wallet to import to
      * @param label the label to use for the identity in the wallet.
      */
-    async enrollToWallet(userID: string, secret: string, mspId: string, walletToImportTo: Wallet, label: string): Promise<void> {
+    public async enrollToWallet(userID: string, secret: string, mspId: string, walletToImportTo: Wallet, label: string): Promise<void> {
         const options: CAClient.IEnrollmentRequest = { enrollmentID: userID, enrollmentSecret: secret };
         const client: Client = await this._getClient();
         const enrollment: CAClient.IEnrollResponse = await client.getCertificateAuthority().enroll(options);
         const userIdentity: Identity = X509WalletMixin.createIdentity(mspId, enrollment.certificate, enrollment.key.toBytes());
         await walletToImportTo.import(label, userIdentity);
     }
-
 }

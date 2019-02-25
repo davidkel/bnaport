@@ -1,18 +1,18 @@
 // This is the main program to drive this contrived client
 // run this script.
 
-import {Contract, DiscoveryOptions, Gateway, InMemoryWallet, Network, X509WalletMixin, GatewayOptions} from 'fabric-network';
+import {Contract, DiscoveryOptions, Gateway, InMemoryWallet, Network } from 'fabric-network';
 import * as fs from 'fs';
-import {TraderActions} from './traderactions';
 import {CommodityActions} from './commodityactions';
-import {QueryActions} from './queryactions';
-import {TxActions} from './txactions';
 import {IdentityManager} from './identitymanager';
+import {QueryActions} from './queryactions';
+import {TraderActions} from './traderactions';
+import {TxActions} from './txactions';
 
 // the ccp file to use
 const ccpFile: string = './ccp-single.json';
 
-// define the organisation name we will represent 
+// define the organisation name we will represent
 const orgName: string = 'Org1';
 
 // define the name, pw and wallet label of the ca registrar
@@ -58,13 +58,13 @@ const convertDiscoveredToLocalHost: boolean = null;
     // enroll that user into a useable identity and store it in the wallet.
     await idManager.enrollToWallet(userName, userNamePW, mspid, inMemoryWallet, userNameWalletLabel);
 
-/*    
+/*
     // example of loading existing crypto material into the in memory wallet
     const cert: string = fs.readFileSync('./myid/cert.pem').toString();
     const key: string = fs.readFileSync('./myid/key.pem').toString();
     await inMemoryWallet.import('myid@org1', X509WalletMixin.createIdentity(org1msp, cert, key));
     const exists: boolean = await inMemoryWallet.exists('myid@org1');
-    console.log('myid stored in wallet:', exists);    
+    console.log('myid stored in wallet:', exists);
 */
 
     // create the gateway
@@ -74,12 +74,12 @@ const convertDiscoveredToLocalHost: boolean = null;
         discoveryOptions.asLocalhost = convertDiscoveredToLocalHost;
     }
 
-	try {
-		await gateway.connect(ccp, {
+    try {
+        await gateway.connect(ccp, {
             wallet: inMemoryWallet,
             identity: userNameWalletLabel,
             discovery: discoveryOptions
-		});
+        });
 
         // invoke the various different types of tasks.
         const network: Network = await gateway.getNetwork(channel);
@@ -88,17 +88,10 @@ const convertDiscoveredToLocalHost: boolean = null;
         await (new CommodityActions(network, contract)).run();
         await (new TxActions(network, contractName, mspid)).run();
         await (new QueryActions(network, contract)).run();
-	} catch(error) {
-		console.log(error);
-	} finally {
+    } catch (error) {
+        console.log(error);
+    } finally {
         gateway.disconnect();
-		//process.exit(0);  // needed because using HSM causes app to hang at the end.
-	}
-
-
-
-
-
-
-
+        // process.exit(0);  // needed because using HSM causes app to hang at the end.
+    }
 })();

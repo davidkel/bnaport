@@ -3,25 +3,24 @@ import {Trader} from '../../model/trade-model';
 
 export class TraderActions {
 
-    network: Network;
-    contract: Contract;
+    private network: Network;
+    private contract: Contract;
 
     constructor(network: Network, contract: Contract) {
         this.network = network;
         this.contract = contract;
     }
 
-    displayResource(resource: string): void {
+    private displayResource(resource: string): void {
         console.log(JSON.parse(resource));
     }
 
-
-    async createTrader(traderID: string, first: string, last: string): Promise<void> {
+    private async createTrader(traderID: string, first: string, last: string): Promise<void> {
         const trader: Trader = {
             tradeId: traderID,
             firstName: first,
             lastName: last
-        }
+        };
 
         const exists: Buffer = await this.contract.evaluateTransaction('existsTrader', traderID);
 
@@ -36,21 +35,21 @@ export class TraderActions {
         this.displayResource(res.toString('utf8'));
     }
 
-    async run(): Promise<void> {
-        console.log('\n\n\n------- TRADER ACTIONS START --------')
+    public async run(): Promise<void> {
+        console.log('\n\n\n------- TRADER ACTIONS START --------');
 
         // create Traders
         await this.createTrader('T1', 'Fred', 'Bloggs');
         await this.createTrader('T2', 'John', 'Doe');
         await this.createTrader('T5', 'John', 'Doe');
 
-    
         // Do Full CRUD on TEMP trader
         const tempTrader: Trader = {
             tradeId: 'TEMP',
             firstName: 'Joe',
             lastName: 'Bloggs'
-        }
+        };
+
         await this.contract.submitTransaction('addTrader', JSON.stringify(tempTrader));
         console.log('Temp trader details');
         let res: Buffer = await this.contract.evaluateTransaction('getTrader', 'TEMP');
@@ -64,6 +63,6 @@ export class TraderActions {
         await this.contract.submitTransaction('deleteTrader', 'TEMP');
         console.log('Temp trader details');
         console.log('exists', (await this.contract.evaluateTransaction('existsTrader', 'TEMP')).length !== 0);
-        console.log('------- TRADER ACTIONS END --------\n\n\n')
+        console.log('------- TRADER ACTIONS END --------\n\n\n');
     }
 }
