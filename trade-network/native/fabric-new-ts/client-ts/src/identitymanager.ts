@@ -126,9 +126,10 @@ export class IdentityManager {
             });
         }
 
-        if (options.attributes) {
-            registerRequest.attrs = registerRequest.attrs.concat(options.atttributes);
+        if (options.attributes && Array.isArray(options.attributes)) {
+            registerRequest.attrs = registerRequest.attrs.concat(options.attributes);
         }
+        console.log(registerRequest);
 
         const gateway: Gateway = await this._getGateway();
         const identity: Client.User = gateway.getCurrentIdentity();

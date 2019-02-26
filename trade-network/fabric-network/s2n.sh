@@ -1,8 +1,8 @@
-source ./setup_bin.sh
 if [[ ! -n "$VER"  ]]; then
     export VER=1.4.0
     echo VER not defined, setting it to 1.4.0
 fi
+source ./setup_bin.sh
 
 # ---> Dev mode fabric
 
@@ -18,7 +18,7 @@ npm start -- --peer.address grpc://localhost:7052 --chaincode-id-name trade-netw
 # uncomment if you are using 2 peer fabric for dev mode
 # npm start -- --peer.address grpc://localhost:8052 --chaincode-id-name trade-network:0.0.1 &
 
-# example of starting chaincode if not using contract api as package.json npm start is 
+# example of starting chaincode if not using contract api as package.json npm start is
 # a contract example
 # CORE_CHAINCODE_ID_NAME="trade-network:0.0.1" node chaincode/simpleChaincode.js --peer.address grpc://localhost:7052 &
 

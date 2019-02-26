@@ -30,8 +30,16 @@ export interface Trader extends Resource {
     lastName: string;
 };
 
+// the transaction definition modelled rather than just
+// provide parameters to the method invocation
 export interface Trade extends Resource {
     commodityId: string;
     newOwnerId: string;
 };
-  
+
+// this event format does differ from composer but there is
+// no need for it to be identical.
+export interface CommodityEvent {
+    action: string;
+    commodity: Commodity;
+}

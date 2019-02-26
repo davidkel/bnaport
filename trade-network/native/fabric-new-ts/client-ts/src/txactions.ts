@@ -1,5 +1,5 @@
 import { Contract, Network } from 'fabric-network';
-import { Trade } from '../../model/trade-model';
+import { CommodityEvent, Trade } from '../../model/trade-model';
 import {ChaincodeEventEmitter} from './chaincodeeventemitter';
 
 export class TxActions {
@@ -43,7 +43,8 @@ export class TxActions {
 
         const chaincodeEventEmitter: ChaincodeEventEmitter = new ChaincodeEventEmitter(this.network, this.mspid, this.contractName);
         await chaincodeEventEmitter.initialize();
-        chaincodeEventEmitter.on('ChaincodeEvent', async (event) => {
+        chaincodeEventEmitter.on('ChaincodeEvent', async (event: CommodityEvent) => {
+            console.log('Event Received:');
             console.log(event);
             const resolvedOwner: Buffer = await this.contract.evaluateTransaction('resolveResource', event.commodity.owner, 'Participant');
             event.commodity.owner = JSON.parse(resolvedOwner.toString('utf8'));

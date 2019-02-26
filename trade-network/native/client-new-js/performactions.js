@@ -13,7 +13,7 @@ const IdentityManager = require('./identitymanager');
 // the ccp file to use
 const ccpFile = './ccp-single.json';
 
-// define the organisation name we will represent 
+// define the organisation name we will represent
 const orgName = 'Org1';
 
 // define the name, pw and wallet label of the ca registrar
@@ -22,9 +22,9 @@ const caRegistrarPW = 'adminpw';
 const caRegistrarWalletLabel = 'CAAdmin@org1';
 
 // define the name, pw and wallet lavel of the user to register (if not registered) and use.
-const userName = 'david';
-const userNamePW = 'davidpw';
-const userNameWalletLabel = 'david@org1';
+const userName = 'alex';
+const userNamePW = 'alexpw';
+const userNameWalletLabel = 'alex@org1';
 
 // define the channel/contract and discovery requirements
 const channel = 'mychannel';
@@ -53,7 +53,14 @@ const convertDiscoveredToLocalHost = null;
     // register a user if not already registered, allow infinite enrollment
     const userExists = await idManager.exists(userName);
     if (!userExists) {
-        await idManager.registerUser(userName, userNamePW);
+        // register a user with the ability to access the trade-network contract
+        await idManager.registerUser(userName, userNamePW, {attributes: [
+            {
+                name: 'trade-network',
+                value: 'allow',
+                ecert: true
+            }
+        ]});
     }
 
     // enroll that user into a useable identity and store it in the wallet.

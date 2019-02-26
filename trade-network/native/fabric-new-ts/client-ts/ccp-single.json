@@ -42,13 +42,7 @@
     },
     "peers": {
         "peer0.org1.example.com": {
-			"url": "grpc://localhost:7051",
-            "grpcOptions": {
-                "grpc.http2.keepalive_time": 360,
-                "grpc.keepalive_time_ms": 360000,
-                "grpc.http2.keepalive_timeout": 180,
-                "grpc.keepalive_timeout_ms": 180000
-            }
+			"url": "grpc://localhost:7051"
 		}
     },
     "certificateAuthorities": {

@@ -21,9 +21,9 @@ const caRegistrarPW: string = 'adminpw';
 const caRegistrarWalletLabel: string = 'CAAdmin@org1';
 
 // define the name, pw and wallet lavel of the user to register (if not registered) and use.
-const userName: string = 'david';
-const userNamePW: string = 'davidpw';
-const userNameWalletLabel: string = 'david@org1';
+const userName: string = 'alex';
+const userNamePW: string = 'alexpw';
+const userNameWalletLabel: string = 'alex@org1';
 
 // define the channel/contract and discovery requirements
 const channel: string = 'mychannel';
@@ -52,7 +52,14 @@ const convertDiscoveredToLocalHost: boolean = null;
     // register a user if not already registered, allow infinite enrollment
     const userExists = await idManager.exists(userName);
     if (!userExists) {
-        await idManager.registerUser(userName, userNamePW);
+        // register a user with the ability to access the trade-network contract
+        await idManager.registerUser(userName, userNamePW, {attributes: [
+            {
+                name: 'trade-network',
+                value: 'allow',
+                ecert: true
+            }
+        ]});
     }
 
     // enroll that user into a useable identity and store it in the wallet.
