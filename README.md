@@ -23,6 +23,9 @@ This directory contains a native fabric implementation of the business network a
 | fabric-new-ts | An implementation of the business network and client using the new programming models in typescript |
 | fabric-old-js | An implementation of the business network not using the contract api (ie would work prior to 1.4) |
 
+The fabric-old-js is provided only as a comparision on how this might have been done prior to the new contract support and may not be as upto date in capability as the fabric-new-ts contract implementation.
+
+
 ### fabric-network
 A hyperledger fabric network that can be used to run the native chaincode (either in development mode or non development mode). 
 

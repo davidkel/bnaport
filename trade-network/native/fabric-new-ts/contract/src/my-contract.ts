@@ -43,13 +43,13 @@ const queryMap = {
 export class MyContract extends Contract {
 
     public async beforeTransaction(ctx: Context): Promise<void> {
-        // perform some Access Control checks
+        // perform some generic Access Control checks
         const fcn: string = ctx.stub.getFunctionAndParameters().fcn;
         if (fcn === 'instantiate' || fcn === 'upgrade') {
-            // check this is only being run by an administrator
+            // check this is only being run by an administrator as instantiate and
+            // upgrade can only be done by a channel admin but without a check any
+            // one could invoke the instantiate or upgrade functions.
             // nothing provided here in the example but should be considered
-            // as this is a channel admin, may not have the appropriate
-            // attribute in their cert.
             console.log('Only a demo, so access allowed for instantiate/upgrade for anyone');
         } else {
             // invoking other generally available functions
@@ -80,10 +80,22 @@ export class MyContract extends Contract {
         console.info('upgrade');
     }
 
+    // ------------------------------------------------------------------
+    // Important point to note about input parameters and return values
+    // when using a contract.
+    // 1. As no contract metadata is defined for this contact all
+    // input parameters will be strings
+    // 2. The return values will be automatically converted to JSON strings
+    // and inserted into a Buffer object so can return primitive's or
+    // objects rather than a Buffer object.
+    // ------------------------------------------------------------------
+
     // ------------------------------------------------------
     // methods to replicate in-built composer capability
     // ------------------------------------------------------
 
+    // The following methods provide named CRUD type methods to work
+    // on a trader.
     public async addTrader(ctx: Context, traderStr: string): Promise<Trader> {
         return this.CRUDTrader(ctx, traderStr, 'c');
     }
@@ -103,6 +115,8 @@ export class MyContract extends Contract {
         return this.CRUDTrader(ctx, `{"${TraderIdField}": "${tradeId}"}`, 'e');
     }
 
+    // The following methods provide named CRUD type methods to work
+    // on a commodity.
     public async addCommodity(ctx: Context, commodityStr: string): Promise<Commodity> {
         return this.CRUDCommodity(ctx, commodityStr, 'c');
     }
@@ -122,19 +136,47 @@ export class MyContract extends Contract {
         return this.CRUDCommodity(ctx, `{"${CommodityIdField}": "${tradingSymbol}"}`, 'e');
     }
 
+    /**
+     * This is used to perform generic CRUD operations on a Trader
+     * @async
+     * @param ctx The transaction context
+     * @param traderStr The trader to work with as a JSON String
+     * @param action The action to perform
+     * @returns the result of the requested action
+     */
     public async CRUDTrader(ctx: Context, traderStr: string, action: string): Promise<any> {
+        // deserialize the trader object, no validation done to confirm it is correct
+        // add in the class definition for the trader.
         const trader: Trader = JSON.parse(traderStr);
         trader.$class = TraderClass;
         return this._CRUDResource(ctx, TraderType, trader, TraderIdField, action);
     }
 
+    /**
+     * This is used to perform generic CRUD operations on a Commodity
+     * @async
+     * @param ctx The transaction context
+     * @param commodityStr The commodity to work with as a JSON String
+     * @param action The action to perform
+     * @returns the result of the requested action
+     */
     public async CRUDCommodity(ctx: Context, commodityStr: string, action: string): Promise<any> {
+        // deserialize the commodity object, no validation is done to confirm it is correct
+        // add in the class definition for the commodity
         const commodity: Commodity = JSON.parse(commodityStr);
         commodity.$class = CommodityClass;
         return this._CRUDResource(ctx, CommodityType, commodity, CommodityIdField, action);
     }
 
-    public async runDynamicQuery(ctx: Context, mango: string): Promise<any> {
+    /**
+     * run a mango specified query. If the dataset is large, this could have performance impacts
+     * so should consider using pagination.
+     * @async
+     * @param ctx The transaction context
+     * @param mango The mango query to run
+     * @returns all the results from that query
+     */
+    public async runDynamicQuery(ctx: Context, mango: string): Promise<any[]> {
         // not good for large datasets as this code will load
         // the complete result set into memory then return it
         // should consider pagination if the result set is going
@@ -153,7 +195,16 @@ export class MyContract extends Contract {
         return results;
     }
 
-    public async runQuery(ctx: Context, queryName: string, queryParams: string[]): Promise<any> {
+    /**
+     * callable method to run a named query defined in this contract. This is just a simple
+     * example so only actually allows for a single parameter.
+     * @async
+     * @param ctx The transaction context
+     * @param queryName The name of the query to run
+     * @param queryParams the parameters to supply to that query
+     * @returns all the results from that query
+     */
+    public async runQuery(ctx: Context, queryName: string, queryParams: string[]): Promise<any[]> {
         let mango: string = queryMap[queryName];
         if (mango) {
             if (mango.indexOf('%1') > 0 && queryParams && queryParams.length > 0) {
@@ -164,12 +215,21 @@ export class MyContract extends Contract {
         throw new Error(`query ${queryName} does not exist`);
     }
 
-    public async resolveResource(ctx: Context, resource: Reference, type: string): Promise<any> {
+    /**
+     * Helper method that is also callable from the client to resolve a composer relationship
+     * which takes for format of resource://class#identifier
+     * @async
+     * @param ctx The transaction context
+     * @param resourceRef the reference to the resource
+     * @param type the type of resource being referenced
+     * @returns either an Asset or Participant.
+     */
+    public async resolveResource(ctx: Context, resourceRef: Reference, type: string): Promise<any> {
         // this doesn't perform a nested resolve (ie only does 1 deep as trade-network doesn't need it)
-        if (resource.startsWith('resource:')) {
-            resource = resource.substr(9);
+        if (resourceRef.startsWith('resource:')) {
+            resourceRef = resourceRef.substr(9);
         }
-        const keys: string[] = resource.split('#');
+        const keys: string[] = resourceRef.split('#');
         const compositeKey: string = ctx.stub.createCompositeKey(type + ':' + keys[0], [keys[1]]);
         const state: Buffer = await ctx.stub.getState(compositeKey);
         if (state.length) {
@@ -186,7 +246,7 @@ export class MyContract extends Contract {
     // equivalent of the TP functions in trade-network
     // ------------------------------------------------------
 
-    public async tradeCommodity(ctx: Context, tradeStr: string): Promise<any> {
+    public async tradeCommodity(ctx: Context, tradeStr: string): Promise<void> {
         // note, there is no runtime validation of the
         // data, you need to do this yourself.
         const trade: Trade = JSON.parse(tradeStr);
@@ -206,7 +266,7 @@ export class MyContract extends Contract {
         ctx.stub.setEvent('trade-network', Buffer.from(JSON.stringify(events)));
     }
 
-    public async removeHighQuantityCommodities(ctx: Context): Promise<any> {
+    public async removeHighQuantityCommodities(ctx: Context): Promise<void> {
         const results = await this.runQuery(ctx, 'selectCommoditiesWithHighQuantity', null);
 
         // since all registry requests have to be serialized anyway, there is no benefit to calling Promise.all
@@ -229,44 +289,80 @@ export class MyContract extends Contract {
     // provide equivalent composer capabilities not directly
     // exposed
     // ------------------------------------------------------
+
+    /**
+     * Get all the history for a resource. If a resource can have a long history
+     * then this call could take a long time and performance considerations may be
+     * needed, for example you may want to introduce pagination support.
+     * @param ctx The transaction context
+     * @param type the type of resource Asset or Participant
+     * @param $class the class of resource
+     * @param id the identitier of the resource
+     */
     private async _historyForResource(ctx: Context, type: string, $class: string, id: string): Promise<any> {
+        // create the composite key in composer format
         const compositeKey = ctx.stub.createCompositeKey(type + ':' + $class, [id]);
         const historyIterator: Iterators.HistoryQueryIterator = await ctx.stub.getHistoryForKey(compositeKey);
         return await this._getAllHistoryResults(ctx, historyIterator);
     }
 
+    /**
+     * This is used to perform generic CRUD operations on a Resource and a Resource
+     * here is either an Asset or Participant.
+     * @async
+     * @param ctx The transaction context
+     * @param type Asset or Participant
+     * @param resource information about the asset or participant
+     * @param idField the field in the resource that is the identifier for this resource
+     * @param action the action to perform
+     */
     private async _CRUDResource(ctx: Context, type: string, resource: Resource, idField: string, action: string): Promise<any> {
+        // create the composite key in composer format
         const compositeKey = ctx.stub.createCompositeKey(type + ':' + resource.$class, [resource[idField]]);
         const state: Buffer = await ctx.stub.getState(compositeKey);
         switch (action) {
             case 'c':
+                // create an Asset or Participant and check it doesn't exist first
                 if (state.length !== 0) {
                     throw new Error(`Resource ${resource.$class} with id ${resource[idField]} exists`);
                 }
                 await ctx.stub.putState(compositeKey, Buffer.from(JSON.stringify(resource)));
+                // return back that created Asset or Participant
                 return resource;
             case 'u':
+                // update an Asset or Participant and check it does exist first
                 if (state.length === 0) {
                     throw new Error(`Resource ${resource.$class} with id ${resource[idField]} doesn't exist`);
                 }
                 await ctx.stub.putState(compositeKey, Buffer.from(JSON.stringify(resource)));
+                // return back that resource
                 return resource;
             case 'd':
+                // delete the Asset or Participant so long as it exists
                 if (state.length === 0) {
                     throw new Error(`Resource ${resource.$class} with id ${resource[idField]} doesn't exist`);
                 }
                 await ctx.stub.deleteState(compositeKey);
                 return;
             case 'r':
+                // return the requested Asset or Participant if it exists
                 if (state.length) {
                     return JSON.parse(state.toString('utf8'));
                 }
                 throw new Error(`${type}:${resource.$class} with id ${resource[idField]} does not exist`);
             case 'e':
+                // return whether the asset or participant exists or not.
                 return state.length !== 0;
         }
     }
 
+    /**
+     * Helper method to get all the history results from an iterator
+     * @async
+     * @param ctx The transaction context
+     * @param iterator The iterator
+     * @returns an array of the objects that represent the information.
+     */
     private async _getAllHistoryResults(ctx: Context, iterator: Iterators.HistoryQueryIterator): Promise<any> {
         const results = [];
         let res: Iterators.NextKeyModificationResult = {done: false, value: null};
@@ -296,6 +392,13 @@ export class MyContract extends Contract {
         }
     }
 
+    /**
+     * Helper method to get all the query results from an iterator
+     * @async
+     * @param ctx The transaction context
+     * @param iterator The iterator
+     * @returns an array of the objects that represent the information.
+     */
     private async _getAllResults(ctx: Context, iterator: Iterators.StateQueryIterator): Promise<any> {
         const results = [];
         let res: Iterators.NextResult = {done: false, value: null};
