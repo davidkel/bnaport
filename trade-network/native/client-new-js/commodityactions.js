@@ -21,7 +21,7 @@ class CommodityActions {
 
         const exists = await this.contract.evaluateTransaction('CRUDCommodity', JSON.stringify(commodity), 'e');
 
-        if (!exists.length) {
+        if ((exists.toString() !== 'true')) {
             await this.contract.submitTransaction('CRUDCommodity', JSON.stringify(commodity), 'c');
             console.log('commodity added');
         } else {
@@ -57,12 +57,12 @@ class CommodityActions {
         tempCommodity.mainExchange = 'LSE';
         await this.contract.submitTransaction('CRUDCommodity', JSON.stringify(tempCommodity), 'u');
         console.log('Temp commodity details');
-        console.log('exists', (await this.contract.evaluateTransaction('CRUDCommodity', JSON.stringify(tempCommodity), 'e')).length !== 0);
+        console.log('exists', (await this.contract.evaluateTransaction('CRUDCommodity', JSON.stringify(tempCommodity), 'e')).toString() === 'true');
         res = await this.contract.evaluateTransaction('CRUDCommodity', JSON.stringify(tempCommodity), 'r');
         this.displayResource(res.toString('utf8'));
         await this.contract.submitTransaction('CRUDCommodity', JSON.stringify(tempCommodity), 'd');
         console.log('Temp commodity details');
-        console.log('exists', (await this.contract.evaluateTransaction('CRUDCommodity', JSON.stringify(tempCommodity), 'e')).length !== 0);
+        console.log('exists', (await this.contract.evaluateTransaction('CRUDCommodity', JSON.stringify(tempCommodity), 'e')).toString() === 'true');
         console.log('------- COMMODITY ACTIONS END --------\n\n\n')
     }
 }

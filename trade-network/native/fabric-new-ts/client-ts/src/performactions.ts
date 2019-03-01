@@ -10,7 +10,7 @@ import {TraderActions} from './traderactions';
 import {TxActions} from './txactions';
 
 // the ccp file to use
-const ccpFile: string = './ccp-single.json';
+const ccpFile: string = './ccp-discovery.json';
 
 // define the organisation name we will represent
 const orgName: string = 'Org1';
@@ -26,10 +26,10 @@ const userNamePW: string = 'alexpw';
 const userNameWalletLabel: string = 'alex@org1';
 
 // define the channel/contract and discovery requirements
-const channel: string = 'mychannel';
-const contractName: string = 'trade-network';
-const useDiscovery: boolean = false;
-const convertDiscoveredToLocalHost: boolean = null;
+const channelName: string = 'mychannel';
+const chaincodeId: string = 'trade-network';
+const useDiscovery: boolean = true;
+const convertDiscoveredToLocalHost: boolean = true;
 
 (async () => {
     // load the connection profile
@@ -74,7 +74,11 @@ const convertDiscoveredToLocalHost: boolean = null;
     console.log('myid stored in wallet:', exists);
 */
 
-    // create the gateway
+    // create the gateway. Gateways are tied to the identity specified when
+    // connected and can multiplex requests, so you only need 1 gateway per
+    // unique identity. Also gateways are meant to be long lived, you don't
+    // connect a gateway use it for a single request then disconnect it. That
+    // approach would not be a good pattern.
     const gateway: Gateway = new Gateway();
     const discoveryOptions: DiscoveryOptions = {enabled: useDiscovery};
     if (useDiscovery && convertDiscoveredToLocalHost !== null) {
@@ -88,16 +92,21 @@ const convertDiscoveredToLocalHost: boolean = null;
             discovery: discoveryOptions
         });
 
-        // invoke the various different types of tasks.
-        const network: Network = await gateway.getNetwork(channel);
-        const contract: Contract = network.getContract(contractName);
+        // get a network object from the channel name
+        const network: Network = await gateway.getNetwork(channelName);
+
+        // get the contract from the chaincode id.
+        const contract: Contract = network.getContract(chaincodeId);
+
+        // run the various tasks to test the contract
         await (new TraderActions(network, contract).run());
         await (new CommodityActions(network, contract)).run();
-        await (new TxActions(network, contractName, mspid)).run();
+        await (new TxActions(network, chaincodeId, mspid)).run();
         await (new QueryActions(network, contract)).run();
     } catch (error) {
         console.log(error);
     } finally {
+        // must always disconnect the gateway before you application terminates
         gateway.disconnect();
         // process.exit(0);  // needed because using HSM causes app to hang at the end.
     }

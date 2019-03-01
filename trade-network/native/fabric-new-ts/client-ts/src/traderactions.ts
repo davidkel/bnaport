@@ -11,10 +11,20 @@ export class TraderActions {
         this.contract = contract;
     }
 
+    /**
+     * Helper method to display a resource
+     * @param resource the resource
+     */
     private displayResource(resource: string): void {
         console.log(JSON.parse(resource));
     }
 
+    /**
+     * Helper method to create if it doesn't exist
+     * @param traderID traderID
+     * @param first first name
+     * @param last last name
+     */
     private async createTrader(traderID: string, first: string, last: string): Promise<void> {
         const trader: Trader = {
             tradeId: traderID,
@@ -22,9 +32,12 @@ export class TraderActions {
             lastName: last
         };
 
+        // check to see if the trader exists
         const exists: Buffer = await this.contract.evaluateTransaction('existsTrader', traderID);
 
-        if (!exists.length) {
+        // convert the string to a true boolean in the if statement.
+        if (exists.toString() !== 'true') {
+            // trader doesn't exist
             await this.contract.submitTransaction('addTrader', JSON.stringify(trader));
             console.log('trader added');
         } else {
@@ -50,19 +63,28 @@ export class TraderActions {
             lastName: 'Bloggs'
         };
 
+        // adding a trader so use submitTransaction
         await this.contract.submitTransaction('addTrader', JSON.stringify(tempTrader));
         console.log('Temp trader details');
+
+        // getting the trader so use evaluateTransaction
         let res: Buffer = await this.contract.evaluateTransaction('getTrader', 'TEMP');
         this.displayResource(res.toString('utf8'));
         tempTrader.lastName = 'Bond';
+
+        // updating the trader so use submitTransaction
         await this.contract.submitTransaction('updateTrader', JSON.stringify(tempTrader));
         console.log('Temp trader details');
-        console.log('exists', (await this.contract.evaluateTransaction('existsTrader', 'TEMP')).length !== 0);
+
+        // checking existance so use evaluateTransaction
+        console.log('exists', (await this.contract.evaluateTransaction('existsTrader', 'TEMP')).toString() === 'true');
         res = await this.contract.evaluateTransaction('getTrader', 'TEMP');
         this.displayResource(res.toString('utf8'));
+
+        // delete the trader so use submitTransaction
         await this.contract.submitTransaction('deleteTrader', 'TEMP');
         console.log('Temp trader details');
-        console.log('exists', (await this.contract.evaluateTransaction('existsTrader', 'TEMP')).length !== 0);
+        console.log('exists', (await this.contract.evaluateTransaction('existsTrader', 'TEMP')).toString() === 'true');
         console.log('------- TRADER ACTIONS END --------\n\n\n');
     }
 }

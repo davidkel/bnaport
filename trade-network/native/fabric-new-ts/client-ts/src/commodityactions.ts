@@ -14,7 +14,7 @@ export class CommodityActions {
     public async run(): Promise<void> {
         console.log('\n\n\n------- COMMODITY ACTIONS START --------');
 
-        // create a Commodity
+        // ensure a Commodity called C1 exists with the required values so add or update as required
         this.createCommodity('C1', 'Some commodities', 'NASDAQ', 2582, `resource:${TraderClass}#T1`);
 
         // do full CRUD on a commodity
@@ -26,26 +26,50 @@ export class CommodityActions {
             owner: `resource:${TraderClass}#T1`
         };
 
+        // add the commodity so it's a submitTransaction
         await this.contract.submitTransaction('addCommodity', JSON.stringify(tempCommodity));
         console.log('Temp commodity details');
+
+        // get the commodity so it's an evaluateTransaction
         let res: Buffer = await this.contract.evaluateTransaction('getCommodity', 'TempCom');
         this.displayResource(res.toString('utf8'));
+
+        // update the commodity so it's a submitTransaction
         tempCommodity.mainExchange = 'LSE';
         await this.contract.submitTransaction('updateCommodity', JSON.stringify(tempCommodity));
         console.log('Temp commodity details');
-        console.log('exists', (await this.contract.evaluateTransaction('existsCommodity', 'TempCom')).length !== 0);
+
+        // confirm the commodity still exists so it's an evaluateTransaction
+        console.log('exists', (await this.contract.evaluateTransaction('existsCommodity', 'TempCom')).toString() === 'true');
+
+        // get the updated commodity so it's an evaluateTransaction
         res = await this.contract.evaluateTransaction('getCommodity', 'TempCom');
         this.displayResource(res.toString('utf8'));
+
+        // delete the commodity so it's a submitTransaction
         await this.contract.submitTransaction('deleteCommodity', 'TempCom');
-        console.log('Temp commodity details');
-        console.log('exists', (await this.contract.evaluateTransaction('existsCommodity', 'TempCom')).length !== 0);
+
+        // confirm the commodity doesn't exist so evaluateTransaction
+        console.log('exists', (await this.contract.evaluateTransaction('existsCommodity', 'TempCom')).toString() === 'true');
         console.log('------- COMMODITY ACTIONS END --------\n\n\n');
     }
 
+    /**
+     * display a resource
+     * @param resource the resource to display
+     */
     private displayResource(resource: string): void {
         console.log(JSON.parse(resource));
     }
 
+    /**
+     * helper to create or update a commodity
+     * @param tradingSymbol tradingSymbol
+     * @param description description
+     * @param mainExchange mainExchange
+     * @param quantity quantity
+     * @param owner owner in form of resource://
+     */
     private async createCommodity(tradingSymbol: string, description: string, mainExchange: string, quantity: number, owner: string): Promise<void> {
         const commodity: Commodity = {
             tradingSymbol,
@@ -55,16 +79,20 @@ export class CommodityActions {
             owner
         };
 
+        // see if the commodity exists
         const exists: Buffer = await this.contract.evaluateTransaction('existsCommodity', tradingSymbol);
 
-        if (!exists.length) {
+        if ((exists.toString() !== 'true')) {
+            // commodity doesn't exist
             await this.contract.submitTransaction('addCommodity', JSON.stringify(commodity));
             console.log('commodity added');
         } else {
-            console.log('trader exists, updating...');
+            // commodity exists, so update it
+            console.log('commodity exists, updating...');
             await this.contract.submitTransaction('updateCommodity', JSON.stringify(commodity));
             console.log('commodity added');
         }
+        // display the current commodity
         console.log('commodity details retrieved');
         const res: Buffer = await this.contract.evaluateTransaction('getCommodity', tradingSymbol);
         this.displayResource(res.toString('utf8'));

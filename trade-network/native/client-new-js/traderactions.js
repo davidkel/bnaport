@@ -19,7 +19,7 @@ class TraderActions {
 
         const exists = await this.contract.evaluateTransaction('existsTrader', traderID);
 
-        if (!exists.length) {
+        if ((exists.toString() !== 'true')) {
             await this.contract.submitTransaction('CRUDTrader', JSON.stringify(trader), 'c');
             console.log('trader added');
         } else {
@@ -38,7 +38,7 @@ class TraderActions {
         await this.createTrader('T2', 'John', 'Doe');
         await this.createTrader('T5', 'John', 'Doe');
 
-    
+
         // Do Full CRUD on trader 3
         const tempTrader = {
             tradeId: 'TEMP',
@@ -52,12 +52,12 @@ class TraderActions {
         tempTrader.lastName = 'Bond';
         await this.contract.submitTransaction('CRUDTrader', JSON.stringify(tempTrader), 'u');
         console.log('Temp trader details');
-        console.log('exists', (await this.contract.evaluateTransaction('CRUDTrader', JSON.stringify(tempTrader), 'e')).length !== 0);
+        console.log('exists', (await this.contract.evaluateTransaction('CRUDTrader', JSON.stringify(tempTrader), 'e')).toString() === 'true');
         res = await this.contract.evaluateTransaction('CRUDTrader', JSON.stringify(tempTrader), 'r');
         this.displayResource(res.toString('utf8'));
         await this.contract.submitTransaction('CRUDTrader', JSON.stringify(tempTrader), 'd');
         console.log('Temp trader details');
-        console.log('exists', (await this.contract.evaluateTransaction('CRUDTrader', JSON.stringify(tempTrader), 'e')).length !== 0);
+        console.log('exists', (await this.contract.evaluateTransaction('CRUDTrader', JSON.stringify(tempTrader), 'e')).toString() === 'true');
         console.log('------- TRADER ACTIONS END --------\n\n\n')
     }
 }

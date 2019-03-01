@@ -352,6 +352,8 @@ export class MyContract extends Contract {
                 throw new Error(`${type}:${resource.$class} with id ${resource[idField]} does not exist`);
             case 'e':
                 // return whether the asset or participant exists or not.
+                // Due to a bug JIRA FAB-14442, this will return 'true' to the client for true
+                // but an empty buffer for false.
                 return state.length !== 0;
         }
     }
