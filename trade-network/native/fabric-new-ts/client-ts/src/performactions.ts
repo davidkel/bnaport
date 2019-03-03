@@ -10,7 +10,7 @@ import {TraderActions} from './traderactions';
 import {TxActions} from './txactions';
 
 // the ccp file to use
-const ccpFile: string = './ccp-discovery.json';
+const ccpFile: string = './ccp-single.json';
 
 // define the organisation name we will represent
 const orgName: string = 'Org1';
@@ -28,8 +28,8 @@ const userNameWalletLabel: string = 'alex@org1';
 // define the channel/contract and discovery requirements
 const channelName: string = 'mychannel';
 const chaincodeId: string = 'trade-network';
-const useDiscovery: boolean = true;
-const convertDiscoveredToLocalHost: boolean = true;
+const useDiscovery: boolean = false;
+const convertDiscoveredToLocalHost: boolean = false;
 
 (async () => {
     // load the connection profile
