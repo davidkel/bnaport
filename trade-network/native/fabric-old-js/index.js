@@ -1,3 +1,16 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 'use strict';
 const shim = require('fabric-shim');
 
@@ -39,7 +52,7 @@ class TradeNetwork {
                 console.log(res);
                 if (res) {
                     switch (typeof res) {
-                        case 'string': 
+                        case 'string':
                             return shim.success(Buffer.from(res));
                         case 'object':
                             return shim.success(Buffer.from(JSON.stringify(res)));
@@ -102,7 +115,7 @@ class TradeNetwork {
     }
     async existsTrader(stub, tradeId) {
         return this.CRUDTrader(ctx, `{"${TraderIdField}": "${tradeId}"}`, 'e');
-    }    
+    }
 
     async addCommodity(stub, commodityStr) {
         return this.CRUDCommodity(ctx, commodityStr, 'c');
@@ -122,7 +135,7 @@ class TradeNetwork {
     async existsCommodity(stub, tradingSymbol) {
         return this.CRUDCommodity(ctx, `{"${CommodityIdField}": "${tradingSymbol}"}`, 'e');
     }
-   
+
     async CRUDTrader(stub, traderStr, action) {
         const trader = JSON.parse(traderStr);
         trader.$class = TraderClass;
@@ -133,13 +146,13 @@ class TradeNetwork {
         const commodity = JSON.parse(commodityStr);
         commodity.$class = CommodityClass;
         return this.CRUDResource(stub, 'Asset', commodity, 'tradingSymbol', action);
-    } 
-    
+    }
+
     async runDynamicQuery(stub, mango) {
         // not good for large datasets as this code will load
         // the complete result set into memory then return it
         // should consider pagination if the result set is going
-        // to ge large        
+        // to ge large
         const iterator = await stub.getQueryResult(mango);
         const results = await this.getAllResults(stub, iterator);
         return results;
@@ -172,7 +185,7 @@ class TradeNetwork {
 
     // ------------------------------------------------------
     // ------------------------------------------------------
-    // ------------------------------------------------------    
+    // ------------------------------------------------------
 
     // ------------------------------------------------------
     // equivalent of the TP functions in trade-network
@@ -284,7 +297,7 @@ class TradeNetwork {
                 return results;
             }
         }
-    }    
+    }
 
     async getAllResults(stub, iterator) {
         const results = [];
@@ -310,7 +323,7 @@ class TradeNetwork {
 
     // ------------------------------------------------------
     // ------------------------------------------------------
-    // ------------------------------------------------------    
+    // ------------------------------------------------------
 }
 
 shim.start(new TradeNetwork());

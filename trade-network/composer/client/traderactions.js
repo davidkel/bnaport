@@ -1,3 +1,16 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 class TraderActions {
 
     constructor(bizNetworkConnection, namespace) {
@@ -37,7 +50,7 @@ class TraderActions {
         await this.createTrader('T1', 'Fred', 'Bloggs');
         await this.createTrader('T2', 'John', 'Doe');
         const traderRegistry = await this.bizNetworkConnection.getParticipantRegistry(this.namespace + '.Trader');
-    
+
         // Do Full CRUD on trader 3
         const tempTrader = this.factory.newResource(this.namespace, 'Trader', 'TEMP');
         tempTrader.firstName = 'Joe';
@@ -52,9 +65,9 @@ class TraderActions {
         this.displayResource(await traderRegistry.get('TEMP'));
         await traderRegistry.remove('TEMP');
         console.log('Temp trader details');
-        console.log('exists', await traderRegistry.exists('TEMP'));   
+        console.log('exists', await traderRegistry.exists('TEMP'));
         console.log('------- TRADER ACTIONS END --------\n\n\n')
- 
+
     }
 }
 
