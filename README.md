@@ -62,3 +62,8 @@ You can also try the pure javascript client as well, first ensure you have all t
 
 You can then run the client
 - run `node performactions.js`
+
+# Using VS Code with IBM Blockchain Platform Extension
+IBM has made available an extension to VS Code called IBM Blockchain Platform which you can use to run and test the new contract. You can download the extension from the VS Code market place. 
+
+A description on using the extension with this sample can be found [here](./VSCode.md)

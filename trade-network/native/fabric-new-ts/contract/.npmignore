@@ -1,0 +1,14 @@
+# ignore the source code as it's typescript
+/src/*
+
+# ignore non runtime files
+.npmignore
+.gitignore
+tsconfig.json
+tslint.json
+
+# ignore node modules
+node_modules
+
+# ignore META-INF as this is a special directory
+META-INF
