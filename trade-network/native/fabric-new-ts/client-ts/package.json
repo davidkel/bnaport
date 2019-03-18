@@ -13,7 +13,8 @@
     "pretest": "npm run lint",
     "build": "tsc",
     "build:watch": "tsc -w",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "client": "node dist/client-ts/src/performactions.js"
   },
   "devDependencies": {
     "typescript": "^3.3.1"

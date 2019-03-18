@@ -33,4 +33,4 @@ npm start -- --peer.address grpc://localhost:7052 --chaincode-id-name trade-netw
 
 cd -
 sleep 5
-CORE_PEER_LOCALMSPID=${MSPID} CORE_PEER_MSPCONFIGPATH=${MSP} ${PEER} chaincode instantiate -o localhost:7050 -C mychannel -l node -n trade-network -v 0.0.1 -c '{"Args":["instantiate", "key1", "1", "key2", "2"]}' -P "OR ('Org1MSP.member')"
+CORE_PEER_LOCALMSPID=${MSPID} CORE_PEER_MSPCONFIGPATH=${MSP} ${PEER} chaincode instantiate -o localhost:7050 -C mychannel -l node -n trade-network -v 0.0.1 -c '{"Args":["instantiate"]}' -P "OR ('Org1MSP.member')"
