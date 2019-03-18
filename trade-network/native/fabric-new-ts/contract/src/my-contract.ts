@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Context, Contract, Info } from 'fabric-contract-api';
+import { Context, Contract, Info, Returns, Transaction } from 'fabric-contract-api';
 import { Iterators, QueryResponseMetadata, StateQueryResponse } from 'fabric-shim';
 import {
     Commodity,
@@ -79,11 +79,13 @@ export class MyContract extends Contract {
         // const cert = ctx.clientIdentity.getX509Certificate();
     }
 
+    @Transaction(true)
     public async instantiate(ctx: Context): Promise<void> {
         // maybe perform some meta-data or data initialisation
         console.info('instantiate');
     }
 
+    @Transaction(true)
     public async upgrade(ctx: Context): Promise<void> {
         // maybe perform some meta-data or data update or migration
         console.info('upgrade');
@@ -105,42 +107,72 @@ export class MyContract extends Contract {
 
     // The following methods provide named CRUD type methods to work
     // on a trader.
+
+    @Transaction(true)
+    @Returns('Trader')
     public async addTrader(ctx: Context, traderStr: string): Promise<Trader> {
         return this.CRUDTrader(ctx, traderStr, 'c');
     }
+
+    @Transaction(true)
+    @Returns('Trader')
     public async updateTrader(ctx: Context, traderStr: string): Promise<Trader> {
         return this.CRUDTrader(ctx, traderStr, 'u');
     }
+
+    @Transaction(true)
     public async deleteTrader(ctx: Context, tradeId: string): Promise<void> {
         return this.CRUDTrader(ctx, `{"${TraderIdField}": "${tradeId}"}`, 'd');
     }
+
+    @Transaction(true)
+    @Returns('Trader')
     public async getTrader(ctx: Context, tradeId: string): Promise<Trader> {
         return this.CRUDTrader(ctx, `{"${TraderIdField}": "${tradeId}"}`, 'r');
     }
+
+    @Transaction(false)
     public async getTraderHistory(ctx: Context, tradeId: string): Promise<any> {
         return this._historyForResource(ctx, TraderType, TraderClass, tradeId);
     }
+
+    @Transaction(false)
     public async existsTrader(ctx: Context, tradeId: string): Promise<boolean> {
         return this.CRUDTrader(ctx, `{"${TraderIdField}": "${tradeId}"}`, 'e');
     }
 
     // The following methods provide named CRUD type methods to work
     // on a commodity.
+
+    @Transaction(true)
+    @Returns('Commodity')
     public async addCommodity(ctx: Context, commodityStr: string): Promise<Commodity> {
         return this.CRUDCommodity(ctx, commodityStr, 'c');
     }
+
+    @Transaction(true)
+    @Returns('Commodity')
     public async updateCommodity(ctx: Context, commodityStr: string): Promise<Commodity> {
         return this.CRUDCommodity(ctx, commodityStr, 'u');
     }
+
+    @Transaction(true)
     public async deleteCommodity(ctx: Context, tradingSymbol: string): Promise<void> {
         return this.CRUDCommodity(ctx, `{"${CommodityIdField}": "${tradingSymbol}"}`, 'd');
     }
+
+    @Transaction(false)
+    @Returns('Commodity')
     public async getCommodity(ctx: Context, tradingSymbol: string): Promise<Commodity> {
         return this.CRUDCommodity(ctx, `{"${CommodityIdField}": "${tradingSymbol}"}`, 'r');
     }
+
+    @Transaction(false)
     public async getCommodityHistory(ctx: Context, tradingSymbol: string): Promise<any> {
         return this._historyForResource(ctx, CommodityType, CommodityClass, tradingSymbol);
     }
+
+    @Transaction(false)
     public async existsCommodity(ctx: Context, tradingSymbol: string): Promise<boolean> {
         return this.CRUDCommodity(ctx, `{"${CommodityIdField}": "${tradingSymbol}"}`, 'e');
     }
@@ -185,6 +217,7 @@ export class MyContract extends Contract {
      * @param mango The mango query to run
      * @returns all the results from that query
      */
+    @Transaction(false)
     public async runDynamicQuery(ctx: Context, mango: string): Promise<any[]> {
         // not good for large datasets as this code will load
         // the complete result set into memory then return it
@@ -233,6 +266,7 @@ export class MyContract extends Contract {
      * @param type the type of resource being referenced
      * @returns either an Asset or Participant.
      */
+    @Transaction(false)
     public async resolveResource(ctx: Context, resourceRef: Reference, type: string): Promise<any> {
         // this doesn't perform a nested resolve (ie only does 1 deep as trade-network doesn't need it)
         if (resourceRef.startsWith('resource:')) {
@@ -254,11 +288,11 @@ export class MyContract extends Contract {
     // ------------------------------------------------------
     // equivalent of the TP functions in trade-network
     // ------------------------------------------------------
-
-    public async tradeCommodity(ctx: Context, tradeStr: string): Promise<void> {
+    @Transaction(true)
+    public async tradeCommodity(ctx: Context, trade: Trade): Promise<void> {
         // note, there is no runtime validation of the
         // data, you need to do this yourself.
-        const trade: Trade = JSON.parse(tradeStr);
+        //const trade: Trade = JSON.parse(tradeStr);
 
         // note here you have to dereference a resource uri
         const commodityToUpdate: Commodity = await this.resolveResource(ctx, `${CommodityClass}#${trade.commodityId}`, CommodityType);
@@ -275,6 +309,7 @@ export class MyContract extends Contract {
         ctx.stub.setEvent('trade-network', Buffer.from(JSON.stringify(events)));
     }
 
+    @Transaction(true)
     public async removeHighQuantityCommodities(ctx: Context): Promise<void> {
         const results = await this.runQuery(ctx, 'selectCommoditiesWithHighQuantity', null);
 

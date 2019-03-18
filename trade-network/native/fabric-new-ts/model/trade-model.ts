@@ -1,3 +1,6 @@
+import {Object, Property} from 'annotationwrapper';
+
+
 /*
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,34 +28,50 @@ export const TraderType = ParticipantType;
 export const TraderClass = Namespace + '.Trader';
 export const TraderIdField = 'tradeId';
 
-export interface Resource {
+export abstract class Resource {
     $class?: string;
 };
 
-export interface Commodity extends Resource {
+@Object()
+export class Commodity extends Resource {
+    @Property()
     tradingSymbol: Identifier;
+    @Property()
     description: string;
+    @Property()
     mainExchange: string;
+    @Property()
     quantity: number;
+    @Property()
     owner: Reference;
 };
 
-export interface Trader extends Resource {
+@Object()
+export class Trader extends Resource {
+    @Property()
     tradeId: Identifier;
+    @Property()
     firstName: string;
+    @Property()
     lastName: string;
 };
 
 // the transaction definition modelled rather than just
 // provide parameters to the method invocation
-export interface Trade extends Resource {
+@Object()
+export class Trade extends Resource {
+    @Property()
     commodityId: string;
+    @Property()
     newOwnerId: string;
 };
 
 // this event format does differ from composer but there is
 // no need for it to be identical.
-export interface CommodityEvent {
+@Object()
+export class CommodityEvent {
+    @Property()
     action: string;
+    @Property()
     commodity: Commodity;
 }

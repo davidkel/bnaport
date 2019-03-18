@@ -31,7 +31,7 @@ class QueryActions {
     async run() {
         console.log('\n\n\n------- QUERY ACTIONS START --------')
         console.log('selectCommodities -->')
-        let resources = await this.contract.evaluateTransaction('runQuery', 'selectCommodities');
+        let resources = await this.contract.evaluateTransaction('runQuery', 'selectCommodities', '');
         this.displayResources(resources.toString('utf8'));
         console.log('------- QUERY ACTIONS END --------\n\n\n')
 

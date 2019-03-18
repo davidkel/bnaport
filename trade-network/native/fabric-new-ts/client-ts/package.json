@@ -4,9 +4,10 @@
   "description": "",
   "author": "",
   "dependencies": {
-    "fabric-network": "1.4.0",
+    "@types/node": "8.10.39",
     "fabric-ca-client": "1.4.0",
-    "@types/node": "8.10.39"
+    "fabric-contract-api": "1.4.0",
+    "fabric-network": "1.4.0"
   },
   "scripts": {
     "lint": "tslint -c tslint.json 'src/**/*.ts'",

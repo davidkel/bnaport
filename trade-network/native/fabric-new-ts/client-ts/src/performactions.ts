@@ -14,7 +14,6 @@
 
 // This is the main program to drive this contrived client
 // run this script.
-
 import {Contract, DiscoveryOptions, Gateway, InMemoryWallet, Network } from 'fabric-network';
 import * as fs from 'fs';
 import {CommodityActions} from './commodityactions';
