@@ -246,6 +246,7 @@ export class MyContract extends Contract {
      * @param queryParams the parameters to supply to that query
      * @returns all the results from that query
      */
+    @Transaction(false)
     public async runQuery(ctx: Context, queryName: string, ...queryParams: string[]): Promise<any[]> {
         let mango: string = queryMap[queryName];
         if (mango) {

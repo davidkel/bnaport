@@ -1,5 +1,9 @@
-import {Object, Property} from 'annotationwrapper';
 
+// only finds the module because the file that imports this file
+// has already imported fabric-contract-api.
+// The type definitions of fabric-contract-api rely on fabric-shim
+// but fabric-contract-api doesn't rely directly on it.
+import {Object, Property} from 'fabric-contract-api';
 
 /*
  * Licensed under the Apache License, Version 2.0 (the "License");
