@@ -46,9 +46,6 @@ const queryMap = {
     selectCommoditiesWithHighQuantity,
 };
 
-@Info({
-    license: 'http://www.apache.org/licenses/LICENSE-2.0',
-})
 export class MyContract extends Contract {
 
     public async beforeTransaction(ctx: Context): Promise<void> {

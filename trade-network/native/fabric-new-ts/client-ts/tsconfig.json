@@ -5,8 +5,7 @@
         "moduleResolution": "node",
         "module": "commonjs",
         "declaration": true,
-        "sourceMap": true,
-        "experimentalDecorators": true
+        "sourceMap": true
     },
     "include": [
         "./src/**/*"
