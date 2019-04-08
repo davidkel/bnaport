@@ -58,6 +58,13 @@ class TraderActions {
             firstName: 'Joe',
             lastName: 'Bloggs'
         }
+        const exists = await this.contract.evaluateTransaction('existsTrader', 'TEMP');
+        console.log('TEMP', exists.toString());
+        if ((exists.toString() === 'true')) {
+            await this.contract.submitTransaction('deleteTrader', 'TEMP');
+            console.log('Deleted TEMP trader');
+        }
+
         await this.contract.submitTransaction('addTrader', JSON.stringify(tempTrader));
         console.log('Temp trader details');
         let res = await this.contract.evaluateTransaction('getTrader', 'TEMP');

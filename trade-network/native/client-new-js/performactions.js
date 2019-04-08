@@ -25,7 +25,7 @@ const TxActions = require('./txactions');
 const IdentityManager = require('./identitymanager');
 
 // the ccp file to use
-const ccpFile = './ccp-single.json';
+const ccpFile = './connection.json';
 
 // define the organisation name we will represent
 const orgName = 'Org1';
@@ -42,7 +42,7 @@ const userNameWalletLabel = 'alex@org1';
 
 // define the channel/contract and discovery requirements
 const channel = 'mychannel';
-const contractName = 'trade-network';
+const contractName = 'mycc';
 const useDiscovery = false;
 const convertDiscoveredToLocalHost = null;
 
@@ -98,9 +98,9 @@ const convertDiscoveredToLocalHost = null;
         const network = await gateway.getNetwork(channel);
         const contract = network.getContract(contractName);
         await (new TraderActions(network, contract).run());
-        await (new CommodityActions(network, contract)).run();
-        await (new TxActions(network, contractName, mspid)).run();
-        await (new QueryActions(network, contract)).run();
+        //await (new CommodityActions(network, contract)).run();
+        //await (new TxActions(network, contractName, mspid)).run();
+        //await (new QueryActions(network, contract)).run();
 	} catch(error) {
 		console.log(error);
 	} finally {
