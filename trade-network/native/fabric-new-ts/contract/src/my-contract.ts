@@ -278,11 +278,12 @@ export class MyContract extends Contract {
         // since all registry requests have to be serialized anyway, there is no benefit to calling Promise.all
         // on an array of promises
         const events: CommodityEvent[] = [];
-        results.forEach(async (commodity: Commodity) => {
+        let commodity: Commodity;
+        for (commodity of results) {
             await this.deleteCommodity(ctx, commodity.tradingSymbol);
             const event: CommodityEvent = {action: 'remove', commodity};
             events.push(event);
-        });
+        }
         ctx.stub.setEvent('trade-network', Buffer.from(JSON.stringify(events)));
     }
 

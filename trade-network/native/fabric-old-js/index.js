@@ -215,11 +215,11 @@ class TradeNetwork {
         // since all registry requests have to be serialized anyway, there is no benefit to calling Promise.all
         // on an array of promises
         const events = [];
-        results.forEach(async (trade) => {
+        for (commodity of results) {
             await this.deleteCommodity(stub, trade.tradingSymbol);
             const event = {action: 'remove', commodity: trade};
             events.push(event);
-        });
+        }
         stub.setEvent('trade-network', Buffer.from(JSON.stringify(events)));
     }
 
