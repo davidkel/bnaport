@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "trade-network/native/fabric-new-ts/contract"
+		},
+		{
+			"path": "trade-network/native/fabric-old-go/src/mycc"
 		}
 	],
 	"settings": {}

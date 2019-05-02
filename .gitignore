@@ -6,3 +6,5 @@ local_fabric
 .contract-oo
 vendor
 pkg
+github.com
+golang.org
