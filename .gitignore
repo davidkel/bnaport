@@ -4,3 +4,5 @@ deployable
 dist
 local_fabric
 .contract-oo
+vendor
+pkg
