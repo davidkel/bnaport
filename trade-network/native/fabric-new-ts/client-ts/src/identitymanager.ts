@@ -47,7 +47,7 @@ export class IdentityManager {
      */
     private async _getClient(): Promise<Client> {
         if (!this.client) {
-            this.client = Client.loadFromConfig(this.ccp);
+            this.client = await Client.loadFromConfig(this.ccp);
             const cryptoSuite: Client.ICryptoSuite = Client.newCryptoSuite();
             cryptoSuite.setCryptoKeyStore(Client.newCryptoKeyStore());
             this.client.setCryptoSuite(cryptoSuite);

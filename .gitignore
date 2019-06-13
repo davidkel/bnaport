@@ -8,3 +8,4 @@ vendor
 pkg
 github.com
 golang.org
+trade-network/native/fabric-old-go/bin

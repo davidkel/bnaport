@@ -35,7 +35,7 @@ class IdentityManager {
      */
     async _getClient() {
         if (!this.client) {
-            this.client = Client.loadFromConfig(this.ccp);
+            this.client = await Client.loadFromConfig(this.ccp);
             const cryptoSuite = Client.newCryptoSuite();
             cryptoSuite.setCryptoKeyStore(Client.newCryptoKeyStore());
             this.client.setCryptoSuite(cryptoSuite);
@@ -135,6 +135,7 @@ class IdentityManager {
         const identity = gateway.getCurrentIdentity();
         const idService = await this._getIdService();
         const userSecret = await idService.create(registerRequest,identity);
+	    console.log('user registered. secret=', userSecret);
         return userSecret;
     }
 
@@ -150,6 +151,7 @@ class IdentityManager {
         const options = { enrollmentID: userID, enrollmentSecret: secret };
         const client = await this._getClient();
         const enrollment = await client.getCertificateAuthority().enroll(options);
+        console.log(userID, 'enrolled', enrollment);
         const userIdentity = X509WalletMixin.createIdentity(mspId, enrollment.certificate, enrollment.key.toBytes());
         await walletToImportTo.import(label, userIdentity);
     }
