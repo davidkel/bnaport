@@ -52,13 +52,12 @@ class TradeNetwork {
                 console.log(res);
                 if (res) {
                     switch (typeof res) {
-                        case 'string':
-                            return shim.success(Buffer.from(res));
-                        case 'object':
-                            return shim.success(Buffer.from(JSON.stringify(res)));
-                        default:
-                            let val = res.toString();
-                            return shim.success(Buffer.from(val));
+                    case 'string':
+                        return shim.success(Buffer.from(res));
+                    case 'object':
+                        return shim.success(Buffer.from(JSON.stringify(res)));
+                    default:
+                        return shim.success(Buffer.from(res.toString()));
                     }
                 } else {
                     return shim.success();
@@ -99,53 +98,53 @@ class TradeNetwork {
     // ------------------------------------------------------
 
     async addTrader(stub, traderStr) {
-        return this.CRUDTrader(ctx, traderStr, 'c');
+        return this.CRUDTrader(stub, traderStr, 'c');
     }
     async updateTrader(stub, traderStr) {
-        return this.CRUDTrader(ctx, traderStr, 'u');
+        return this.CRUDTrader(stub, traderStr, 'u');
     }
     async deleteTrader(stub, tradeId) {
-        return this.CRUDTrader(ctx, `{"${TraderIdField}": "${tradeId}"}`, 'd');
+        return this.CRUDTrader(stub, `{"${TraderIdField}": "${tradeId}"}`, 'd');
     }
     async getTrader(stub, tradeId) {
-        return this.CRUDTrader(ctx, `{"${TraderIdField}": "${tradeId}"}`, 'r');
+        return this.CRUDTrader(stub, `{"${TraderIdField}": "${tradeId}"}`, 'r');
     }
     async getTraderHistory(stub, tradeId) {
-        return this._historyForResource(ctx, TraderType, TraderClass, tradeId);
+        return this._historyForResource(stub, TraderType, TraderClass, tradeId);
     }
     async existsTrader(stub, tradeId) {
-        return this.CRUDTrader(ctx, `{"${TraderIdField}": "${tradeId}"}`, 'e');
+        return this.CRUDTrader(stub, `{"${TraderIdField}": "${tradeId}"}`, 'e');
     }
 
     async addCommodity(stub, commodityStr) {
-        return this.CRUDCommodity(ctx, commodityStr, 'c');
+        return this.CRUDCommodity(stub, commodityStr, 'c');
     }
     async updateCommodity(stub, commodityStr) {
-        return this.CRUDCommodity(ctx, commodityStr, 'u');
+        return this.CRUDCommodity(stub, commodityStr, 'u');
     }
     async deleteCommodity(stub, tradingSymbol) {
-        return this.CRUDCommodity(ctx, `{"${CommodityIdField}": "${tradingSymbol}"}`, 'd');
+        return this.CRUDCommodity(stub, `{"${CommodityIdField}": "${tradingSymbol}"}`, 'd');
     }
     async getCommodity(stub, tradingSymbol) {
-        return this.CRUDCommodity(ctx, `{"${CommodityIdField}": "${tradingSymbol}"}`, 'r');
+        return this.CRUDCommodity(stub, `{"${CommodityIdField}": "${tradingSymbol}"}`, 'r');
     }
     async getCommodityHistory(stub, tradingSymbol) {
-        return this._historyForResource(ctx, CommodityType, CommodityClass, tradingSymbol);
+        return this._historyForResource(stub, CommodityType, CommodityClass, tradingSymbol);
     }
     async existsCommodity(stub, tradingSymbol) {
-        return this.CRUDCommodity(ctx, `{"${CommodityIdField}": "${tradingSymbol}"}`, 'e');
+        return this.CRUDCommodity(stub, `{"${CommodityIdField}": "${tradingSymbol}"}`, 'e');
     }
 
     async CRUDTrader(stub, traderStr, action) {
         const trader = JSON.parse(traderStr);
         trader.$class = TraderClass;
-        return this.CRUDResource(stub, 'Participant', trader, 'tradeId', action);
+        return this.CRUDResource(stub, TraderType, trader, 'tradeId', action);
     }
 
     async CRUDCommodity(stub, commodityStr, action) {
         const commodity = JSON.parse(commodityStr);
         commodity.$class = CommodityClass;
-        return this.CRUDResource(stub, 'Asset', commodity, 'tradingSymbol', action);
+        return this.CRUDResource(stub, CommodityType, commodity, 'tradingSymbol', action);
     }
 
     async runDynamicQuery(stub, mango) {
@@ -195,13 +194,13 @@ class TradeNetwork {
         // note, there is no runtime validation of the
         // data, you need to do this yourself.
         const trade = JSON.parse(tradeStr);
-        const commodityToUpdate = await this.resolveResource(stub, `${CommodityClass}#${trade.commodityId}`, 'Asset');
+        const commodityToUpdate = await this.resolveResource(stub, `${CommodityClass}#${trade.commodityId}`, CommodityType);
         commodityToUpdate.owner = `resource:${TraderClass}#${trade.newOwnerId}`;
 
         // update the commodity
-        const compositeKey = stub.createCompositeKey(`Asset:${CommodityClass}`, [commodityToUpdate.tradingSymbol]);
+        const compositeKey = stub.createCompositeKey(`${CommodityType}:${CommodityClass}`, [commodityToUpdate.tradingSymbol]);
         await stub.putState(compositeKey, Buffer.from(JSON.stringify(commodityToUpdate)));
-        //        await this._CRUDResource(ctx, CommodityType, commodityToUpdate, CommodityIdField, 'u');
+        //        await this._CRUDResource(stub, CommodityType, commodityToUpdate, CommodityIdField, 'u');
 
 
         // fire the chaincode event
@@ -215,9 +214,9 @@ class TradeNetwork {
         // since all registry requests have to be serialized anyway, there is no benefit to calling Promise.all
         // on an array of promises
         const events = [];
-        for (commodity of results) {
-            await this.deleteCommodity(stub, trade.tradingSymbol);
-            const event = {action: 'remove', commodity: trade};
+        for (const commodity of results) {
+            await this.deleteCommodity(stub, commodity.tradingSymbol);
+            const event = {action: 'remove', commodity: commodity};
             events.push(event);
         }
         stub.setEvent('trade-network', Buffer.from(JSON.stringify(events)));
@@ -242,31 +241,31 @@ class TradeNetwork {
         const compositeKey = stub.createCompositeKey(type + ':' + resource.$class, [resource[idField]]);
         const state = await stub.getState(compositeKey);
         switch (action) {
-            case 'c':
-                if (state.length !== 0) {
-                    throw new Error(`Resource ${resource.$class} with id ${resource[idField]} exists`);
-                }
-                await stub.putState(compositeKey, Buffer.from(JSON.stringify(resource)));
-                return resource;
-            case 'u':
-                if (state.length === 0) {
-                    throw new Error(`Resource ${resource.$class} with id ${resource[idField]} doesn't exist`);
-                }
-                await stub.putState(compositeKey, Buffer.from(JSON.stringify(resource)));
-                return resource;
-            case 'd':
-                if (state.length === 0) {
-                    throw new Error(`Resource ${resource.$class} with id ${resource[idField]} doesn't exist`);
-                }
-                await stub.deleteState(compositeKey);
-                return;
-            case 'r':
-                if (state.length) {
-                    return JSON.parse(state.toString('utf8'));
-                }
-                throw new Error(`${type}:${resource.$class} with id ${resource[idField]} does not exist`);
-            case 'e':
-                return state.length !== 0;
+        case 'c':
+            if (state.length !== 0) {
+                throw new Error(`Resource ${resource.$class} with id ${resource[idField]} exists`);
+            }
+            await stub.putState(compositeKey, Buffer.from(JSON.stringify(resource)));
+            return resource;
+        case 'u':
+            if (state.length === 0) {
+                throw new Error(`Resource ${resource.$class} with id ${resource[idField]} doesn't exist`);
+            }
+            await stub.putState(compositeKey, Buffer.from(JSON.stringify(resource)));
+            return resource;
+        case 'd':
+            if (state.length === 0) {
+                throw new Error(`Resource ${resource.$class} with id ${resource[idField]} doesn't exist`);
+            }
+            await stub.deleteState(compositeKey);
+            return;
+        case 'r':
+            if (state.length) {
+                return JSON.parse(state.toString('utf8'));
+            }
+            throw new Error(`${type}:${resource.$class} with id ${resource[idField]} does not exist`);
+        case 'e':
+            return state.length !== 0;
         }
     }
 
@@ -280,11 +279,11 @@ class TradeNetwork {
                 let resp = {
                     timestamp: itVal.timestamp,
                     txid: itVal.tx_id
-                }
+                };
                 if (itVal.is_delete) {
-                   resp.data = 'DELETED';
+                    resp.data = 'DELETED';
                 } else {
-                   resp.data = JSON.parse(itVal.value.toString('utf8'));
+                    resp.data = JSON.parse(itVal.value.toString('utf8'));
                 }
                 results.push(resp);
             }
