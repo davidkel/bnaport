@@ -1,11 +1,10 @@
 {
   "name": "client",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "author": "",
   "dependencies": {
-    "fabric-network": "1.4.0",
-    "fabric-ca-client": "1.4.0",
+    "fabric-network": "1.4.2",
     "@types/node": "8.10.39"
   },
   "scripts": {

@@ -151,7 +151,7 @@ class IdentityManager {
         const options = { enrollmentID: userID, enrollmentSecret: secret };
         const client = await this._getClient();
         const enrollment = await client.getCertificateAuthority().enroll(options);
-        console.log(userID, 'enrolled', enrollment);
+        console.log(userID, 'enrolled');
         const userIdentity = X509WalletMixin.createIdentity(mspId, enrollment.certificate, enrollment.key.toBytes());
         await walletToImportTo.import(label, userIdentity);
     }

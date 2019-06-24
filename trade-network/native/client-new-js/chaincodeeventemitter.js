@@ -24,15 +24,11 @@ class ChaincodeEventEmitter extends EventEmitter {
 
     /**
      * constructor
-     * @param network The network instance from the gateway
-     * @param mspid your organisations mspid
-     * @param contractName the contractName (chaincodeid) for the events
+     * @param contract the contract (chaincode) for the events
      */
-    constructor(network, mspid, contractName) {
+    constructor(contract) {
         super();
-        this.network = network;
-        this.mspid = mspid;
-        this.contractName = contractName;
+        this.contract = contract;
     }
 
     /**
@@ -40,25 +36,13 @@ class ChaincodeEventEmitter extends EventEmitter {
      * hub and registering to listen for chaincode events.
      */
     async initialize() {
-        const channel = this.network.getChannel();
-        const peers = channel.getPeersForOrg(this.mspid);
-        this.eventHub = channel.newChannelEventHub(peers[0].getPeer());
-
-        const waitToConnect = new Promise((resolve, reject) => {
-            this.eventHub.connect(true, (err, eventHub) => {
+        this.contract.addContractListener('unique-id-1', 'trade-network',
+            (err, event, blkNum, txid, status) => {
+                console.log('event received', status, event, blkNum, txid);
                 if (err) {
-                    reject(err);
-                }
-                resolve();
-            });
-        });
-        await waitToConnect;
-
-        // we've connected, so register to listen for chaincode events. If we did this before
-        // connection then if the last block has any chaincode events they could be re-emitted
-        this.handle = this.eventHub.registerChaincodeEvent(this.contractName, 'trade-network',
-            (event, blockNum, txID, status) => {
-                if (status && status === 'VALID') {
+                    this.emit('error', err);
+                } else if (status && status === 'VALID') {
+                    // only if a valid block is committed should we emit an event
                     let evt = event.payload.toString('utf8');
                     evt = JSON.parse(evt);
                     if (Array.isArray(evt)) {
@@ -70,22 +54,9 @@ class ChaincodeEventEmitter extends EventEmitter {
                         this.emit('ChaincodeEvent', evt);
                     }
                 }
-            },
-            (err) => {
-                this.emit('error', err);
-            }
+           }
         );
 
-    }
-
-    /**
-     * destroy this chaincode event emitter. You must call this when you
-     * are no longer interested is receiving chaincode events otherwise your
-     * application will hang on termination
-     */
-    destroy() {
-        this.eventHub.unregisterChaincodeEvent(this.handle);
-        this.eventHub.disconnect();  // must disconnect the event hub or app will hang
     }
 }
 

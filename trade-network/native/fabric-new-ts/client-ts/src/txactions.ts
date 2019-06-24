@@ -54,7 +54,7 @@ export class TxActions {
             eventError = reject;
         });
 
-        const chaincodeEventEmitter: ChaincodeEventEmitter = new ChaincodeEventEmitter(this.network, this.mspid, this.contractName);
+        const chaincodeEventEmitter: ChaincodeEventEmitter = new ChaincodeEventEmitter(this.contract);
         await chaincodeEventEmitter.initialize();
         chaincodeEventEmitter.on('ChaincodeEvent', async (event: CommodityEvent) => {
             console.log('Event Received:');
@@ -78,7 +78,7 @@ export class TxActions {
         } catch (err) {
             console.log(err);
         } finally {
-            chaincodeEventEmitter.destroy();
+            // contract listeners will be removed when the gateway is disconnected
         }
     }
 }

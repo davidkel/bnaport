@@ -48,9 +48,10 @@ class TxActions {
             eventError = reject;
         })
 
-        const chaincodeEventEmitter = new ChaincodeEventEmitter(this.network, this.mspid, this.contractName);
+        const chaincodeEventEmitter = new ChaincodeEventEmitter(this.contract);
         await chaincodeEventEmitter.initialize();
         chaincodeEventEmitter.on('ChaincodeEvent', async (event) => {
+            console.log('Event received--->');
             console.log(event);
             const resolvedOwner = await this.contract.evaluateTransaction('resolveResource', event.commodity.owner, 'Participant');
             event.commodity.owner = JSON.parse(resolvedOwner.toString('utf8'));
@@ -71,7 +72,7 @@ class TxActions {
         } catch(err) {
             console.log(err);
         } finally {
-            chaincodeEventEmitter.destroy();
+            // event handling will be cleaned up when the gateway is destroyed
         }
     }
 }
